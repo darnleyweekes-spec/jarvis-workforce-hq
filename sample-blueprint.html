@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sample AI Workflow Blueprint — Jarvis Workforce HQ</title>
+  <style>
+    :root{--ink:#102237;--muted:#56677a;--cyan:#00a8c6;--navy:#071525;--paper:#f4f7fa;--line:#d8e1e9;--green:#16835d}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 Inter,Arial,sans-serif}
+    main{max-width:980px;margin:auto;background:white;min-height:100vh;padding:64px}
+    header{border-bottom:3px solid var(--cyan);padding-bottom:28px;margin-bottom:36px}
+    .tag{display:inline-block;color:white;background:var(--navy);padding:6px 10px;border-radius:4px;font-size:12px;letter-spacing:.08em}
+    h1{font-size:42px;line-height:1.05;margin:18px 0 10px}h2{margin-top:42px;font-size:25px}h3{margin:0 0 8px}
+    .lede,.note{color:var(--muted)}.note{border-left:4px solid var(--cyan);padding:14px 18px;background:#effafd}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{border:1px solid var(--line);border-radius:10px;padding:20px}
+    table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:12px}th{background:#eef3f7}
+    .good{color:var(--green);font-weight:700}.gate{color:#9a5700;font-weight:700}
+    .flow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.flow span{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff}.flow b{color:var(--cyan)}
+    footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+    @media(max-width:700px){main{padding:28px}.grid{grid-template-columns:1fr}h1{font-size:34px}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="tag">ILLUSTRATIVE · REDACTED SAMPLE</span>
+    <h1>48-Hour AI Workflow Blueprint</h1>
+    <p class="lede">Sample Service Company · New-inquiry qualification and follow-up</p>
+  </header>
+
+  <p class="note"><strong>Important:</strong> This fictional example demonstrates the format and decision quality of the paid Blueprint. It is not a client result, case study, forecast, or guarantee.</p>
+
+  <h2>1. Executive decision</h2>
+  <div class="grid">
+    <section class="card"><h3>Recommended pilot</h3><p>Use AI to prepare a structured lead summary and a channel-appropriate reply draft. A named employee reviews every draft before it is sent.</p></section>
+    <section class="card"><h3>Do not automate yet</h3><p>Pricing exceptions, service-area disputes, safety questions, refunds, and unhappy-customer messages stay fully human-owned.</p></section>
+  </div>
+
+  <h2>2. Current workflow</h2>
+  <div class="flow"><span>Website inquiry</span><b>→</b><span>Shared inbox</span><b>→</b><span>Manual triage</span><b>→</b><span>Reply drafted</span><b>→</b><span>Follow-up remembered</span></div>
+  <p><strong>Observed friction:</strong> incomplete inquiry data, inconsistent response structure, unclear ownership, and no reliable follow-up checkpoint.</p>
+
+  <h2>3. Proposed supervised workflow</h2>
+  <table>
+    <thead><tr><th>Stage</th><th>AI prepares</th><th>Human owns</th><th>Exception</th></tr></thead>
+    <tbody>
+      <tr><td>Intake</td><td>Extracts requested service, location, urgency, and missing fields.</td><td>Confirms source and permission.</td><td>Ignore attachments until reviewed.</td></tr>
+      <tr><td>Qualification</td><td>Applies approved fit criteria and flags uncertainty.</td><td>Accepts or corrects classification.</td><td>Route borderline cases to owner.</td></tr>
+      <tr><td>Response</td><td>Drafts a reply from approved facts and tone.</td><td class="gate">Approves before send.</td><td>No pricing promises or guarantees.</td></tr>
+      <tr><td>Follow-up</td><td>Prepares a reminder and second-touch draft.</td><td class="gate">Chooses whether to send.</td><td>Suppress opt-outs immediately.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. Recommended stack</h2>
+  <div class="grid">
+    <section class="card"><h3>Start with existing tools</h3><p>Website form, current inbox, spreadsheet or CRM, and one approved language model. Add software only after the pilot exposes a real need.</p></section>
+    <section class="card"><h3>Access boundary</h3><p>Read only the designated intake source. Draft-only email permission. No autonomous publishing, payment changes, deletions, or customer commitments.</p></section>
+  </div>
+
+  <h2>5. Measurement plan</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Baseline</th><th>Pilot target</th><th>Decision rule</th></tr></thead>
+    <tbody>
+      <tr><td>Median time to approved first reply</td><td>Measure for 5 business days</td><td>Directional improvement</td><td>Keep only if quality holds</td></tr>
+      <tr><td>Complete lead records</td><td>Audit 20 inquiries</td><td>Fewer missing fields</td><td>Revise intake if gaps remain</td></tr>
+      <tr><td>Draft acceptance rate</td><td>Not available</td><td>Track accepted vs. revised</td><td>Pause if corrections are frequent</td></tr>
+      <tr><td>Opt-out compliance</td><td>Verify process</td><td class="good">100% suppression</td><td>Stop immediately on failure</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. 30-day rollout</h2>
+  <div class="grid">
+    <section class="card"><h3>Days 1–7</h3><p>Confirm policy, map fields, collect baseline, approve examples, and test with synthetic records.</p></section>
+    <section class="card"><h3>Days 8–14</h3><p>Run draft-only pilot with daily review and a small, bounded volume.</p></section>
+    <section class="card"><h3>Days 15–21</h3><p>Review errors, edge cases, timing, staff feedback, and customer-response quality.</p></section>
+    <section class="card"><h3>Days 22–30</h3><p>Keep, revise, or stop. Expand only with written approval and a rollback plan.</p></section>
+  </div>
+
+  <h2>7. Delivery boundaries</h2>
+  <p>The paid Blueprint includes a workflow map, AI opportunity brief, recommended stack, 30-day implementation roadmap, and one revision. Implementation, integrations, software fees, and guaranteed outcomes are not included. The 48-hour clock starts after payment, completed intake, the 45-minute workflow call, and receipt of required inputs; client-caused delays pause the clock.</p>
+
+  <footer>Jarvis Workforce HQ · AI-enabled decision support · 13717 NW 2nd Ave V167, Vancouver, WA 98685</footer>
+</main>
+</body>
+</html>
