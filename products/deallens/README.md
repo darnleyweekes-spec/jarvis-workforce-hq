@@ -51,3 +51,7 @@ First-pass diligence packet for a lower-middle-market acquisition target, includ
 - IC memo draft
 
 The service model comes first. SaaS packaging follows after repeated workflows are validated with paying users.
+
+## Verification
+
+DealLens includes unit tests and a dedicated GitHub Actions CI gate. Production approval requires a successful reported CI run plus the documented Jarvis human-review controls.
