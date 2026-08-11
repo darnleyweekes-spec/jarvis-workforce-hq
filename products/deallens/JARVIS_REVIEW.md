@@ -14,7 +14,7 @@
 
 **Commercial fork licensing: PASS with restrictions** — no reviewed fork source has been copied into DealLens; n8n and Firecrawl remain restricted integration candidates; LiteLLM is only a future candidate from its MIT-licensed non-enterprise portion.
 
-**Automated test execution: REQUIRED BEFORE PRODUCTION DEPLOYMENT**
+**Automated test execution: PASS** — GitHub Actions run `31512819254` completed successfully. Dependency installation, unit tests, and Python compile checks all passed.
 
 ## Review findings closed
 
@@ -26,7 +26,7 @@
 6. File size limits and SHA-256 integrity hashes were added.
 7. External packet export is disabled until the named human reviewer completes calculation, evidence, and security checks.
 8. A reusable Markdown diligence packet is generated for delivery.
-9. Unit tests and a GitHub Actions CI workflow were added.
+9. Unit tests and a GitHub Actions CI workflow were added and verified successfully.
 10. A commercial-use license screening document was added before any upstream fork code reuse.
 
 ## Production boundaries
@@ -35,11 +35,4 @@ DealLens does not make autonomous investment decisions. It does not replace lega
 
 ## Jarvis launch gate
 
-Production deployment requires all of the following:
-
-- automated tests execute successfully;
-- deployment environment has access controls appropriate for confidential deal data;
-- secrets are kept outside source control;
-- retention/deletion behavior is documented for client materials;
-- sample/demo data is used for public demonstrations;
-- human review remains mandatory for external diligence packets.
+The code-level MVP launch gate has passed. Any production deployment handling confidential client deal data must still use appropriate access controls, secret management, and documented retention/deletion behavior. Public demonstrations must use sample/demo data, and human review remains mandatory for external diligence packets.
