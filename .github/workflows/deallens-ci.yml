@@ -1,0 +1,28 @@
+name: DealLens CI
+
+on:
+  pull_request:
+    paths:
+      - 'products/deallens/**'
+      - '.github/workflows/deallens-ci.yml'
+  push:
+    branches:
+      - deallens-mvp
+    paths:
+      - 'products/deallens/**'
+      - '.github/workflows/deallens-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: products/deallens
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: python -m unittest -v test_deallens.py
+      - run: python -m py_compile app.py finance.py reporting.py security.py
