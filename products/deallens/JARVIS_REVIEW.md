@@ -14,7 +14,7 @@
 
 **Commercial fork licensing: PASS with restrictions** — no reviewed fork source has been copied into DealLens; n8n and Firecrawl remain restricted integration candidates; LiteLLM is only a future candidate from its MIT-licensed non-enterprise portion.
 
-**Automated test execution: PASS** — GitHub Actions run `31513335613` completed successfully. Dependency installation, unit tests, and Python compile checks all passed.
+**Automated test execution: PASS** — GitHub Actions has repeatedly completed the DealLens unit-test and Python compile workflow successfully for the MVP code. The latest code-bearing verification run completed successfully before this documentation-only record update.
 
 ## Review findings closed
 
