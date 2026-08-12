@@ -1,0 +1,55 @@
+name: ALPHA static checks
+
+on:
+  push:
+    branches: [alpha-mission-control]
+    paths:
+      - index.html
+      - styles.css
+      - script.js
+      - README.md
+      - ALPHA_ARCHITECTURE.md
+      - .github/workflows/alpha-static-check.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - index.html
+      - styles.css
+      - script.js
+      - README.md
+      - ALPHA_ARCHITECTURE.md
+      - .github/workflows/alpha-static-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  static-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: node --check script.js
+      - name: Check ALPHA Mission Lab contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          html = Path('index.html').read_text()
+          js = Path('script.js').read_text()
+          readme = Path('README.md').read_text()
+
+          required_ids = ['mission-form', 'mission-text', 'mission-result', 'char-count']
+          missing = [item for item in required_ids if f'id="{item}"' not in html]
+          if missing:
+              raise SystemExit(f'Missing Mission Lab DOM ids: {missing}')
+
+          if 'ALPHA' not in html or 'ALPHA' not in js or 'ALPHA' not in readme:
+              raise SystemExit('ALPHA branding missing from a core file')
+
+          for path, content in [('index.html', html), ('script.js', js), ('README.md', readme)]:
+              if 'JARVIS' in content.upper():
+                  raise SystemExit(f'Legacy JARVIS branding remains in {path}')
+
+          print('ALPHA Mission Lab static contract passed')
+          PY
