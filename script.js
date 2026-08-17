@@ -4,7 +4,7 @@ const missionModes = {
   automation: {
     label: "Operations + Automation",
     keywords: ["automate","automation","workflow","manual","repetitive","operations","process","crm","follow-up","follow up","intake","onboarding","reporting","hours","save time"],
-    agents: ["ALPHA","VISION","FRED","TED","BOB"],
+    agents: ["ALPHA","CONDUCTOR","BRIDGE","BOB","PULSE"],
     forks: ["n8n","Activepieces","Twenty","Dify","Ruflo"],
     outcome: "Map the current workflow, isolate the highest-friction steps, design the smallest supervised automation, and define measurable operating controls.",
     approval: "Human approval before external messages, record changes, payments, destructive actions, or production deployment.",
@@ -19,7 +19,7 @@ const missionModes = {
   research: {
     label: "Research + Validation",
     keywords: ["research","validate","market","idea","competitor","compare","trend","evidence","sources","investigate","opportunity","whether","worth building"],
-    agents: ["ALPHA","ROSALIND","VISION","PAM","NEIL"],
+    agents: ["ALPHA","ROSALIND","SCOUT","PAM","PULSE"],
     forks: ["Firecrawl","Onyx","open-notebook","Karakeep","MarkItDown"],
     outcome: "Build an evidence-backed research packet, test the core assumptions, identify contradictions, and convert findings into a decision-ready recommendation.",
     approval: "Human review before relying on uncertain claims, purchasing data, publishing findings, or making consequential decisions.",
@@ -34,7 +34,7 @@ const missionModes = {
   build: {
     label: "Product + Engineering",
     keywords: ["build","website","app","software","code","api","integration","agent","llm","rag","model","database","deploy","prototype","mvp","architecture"],
-    agents: ["ALPHA","VISION","FRED","BOB","HAL","JAN","TED"],
+    agents: ["ALPHA","FORGE","BRIDGE","BOB","EVAL","PROCURE"],
     forks: ["Dify","Langflow","Flowise","LiteLLM","vLLM","Supabase"],
     outcome: "Convert the goal into a scoped product, choose the minimum viable architecture, implement the highest-value path first, and validate before scaling complexity.",
     approval: "Human approval for credentials, production data access, paid infrastructure, deployments, and consequential system changes.",
@@ -49,7 +49,7 @@ const missionModes = {
   growth: {
     label: "Growth + Revenue",
     keywords: ["customer","customers","sales","marketing","seo","lead","leads","revenue","outreach","campaign","offer","conversion","audience","brand","profit","sell","distribution"],
-    agents: ["ALPHA","MARK","PAM","ROSALIND","VISION"],
+    agents: ["ALPHA","SCOUT","CLOSER","MAYA","PULSE"],
     forks: ["open-seo","marketingskills","Agent-Reach","listmonk","Postiz"],
     outcome: "Identify the highest-probability customer segment, sharpen the offer, build a measurable acquisition path, and avoid scaling distribution before message-market fit is proven.",
     approval: "Human approval before outbound contact, publishing, ad spend, pricing changes, or customer commitments.",
@@ -64,7 +64,7 @@ const missionModes = {
   security: {
     label: "Digital Exposure + Security",
     keywords: ["security","cyber","osint","exposure","footprint","domain","username","breach","vulnerability","risk","attack","pentest","audit","public digital","threat"],
-    agents: ["ALPHA","MR. HOLMES","SAM","BENICIO","BILLY","PAUL"],
+    agents: ["ALPHA","BENICIO","BILLY","PAUL","SAM","EVAL"],
     forks: ["Sherlock","theHarvester","user-scanner","CrowdSec","Firecrawl"],
     outcome: "Identify authorized public exposure, prioritize defensive risk, preserve evidence, and produce a remediation plan without crossing permission boundaries.",
     approval: "Explicit authorization is required before any intrusive testing, credential use, exploitation, scanning outside owned scope, or system modification.",
@@ -79,7 +79,7 @@ const missionModes = {
   career: {
     label: "Career + Opportunity",
     keywords: ["job","career","resume","role","roles","hiring","interview","skills","portfolio","upwork","freelance","freelancer","forward deployed","employment","application"],
-    agents: ["ALPHA","VISION","ROSALIND","PAM","FRED"],
+    agents: ["ALPHA","SCOUT","CLOSER","SCRIBE","PAM"],
     forks: ["career-ops","ai-job-search","Firecrawl","Twenty","Agent-Reach"],
     outcome: "Match proven skills to the highest-fit opportunities, identify gaps that actually matter, and convert the search into a focused pipeline with measurable next actions.",
     approval: "Human approval before applications, outreach, profile edits, scheduling, or commitments made on the user’s behalf.",
