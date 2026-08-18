@@ -1,0 +1,54 @@
+name: ALPHA Systems static checks
+
+on:
+  push:
+    branches: [alpha-systems-site]
+    paths:
+      - alpha-systems/**
+      - .github/workflows/alpha-systems-check.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - alpha-systems/**
+      - .github/workflows/alpha-systems-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  static-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate standalone ALPHA Systems site
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('alpha-systems/index.html')
+          html = path.read_text()
+          required = [
+              'ALPHA SYSTEMS',
+              'id="pricing"',
+              'id="economics"',
+              'Workflow Blueprint',
+              '$299',
+              '$1,500',
+              '$500',
+              '$1,200',
+              '$2,500+',
+              'HyperFrames',
+              'id="hours"',
+              'id="payback"',
+          ]
+          missing = [value for value in required if value not in html]
+          if missing:
+              raise SystemExit(f'Missing ALPHA Systems markers: {missing}')
+          scripts = re.findall(r'<script>(.*?)</script>', html, re.S)
+          if not scripts:
+              raise SystemExit('Inline calculator script not found')
+          Path('/tmp/alpha-systems.js').write_text('\n'.join(scripts))
+          print('ALPHA Systems HTML contract passed')
+          PY
+          node --check /tmp/alpha-systems.js
