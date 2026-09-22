@@ -46,6 +46,21 @@ const missionModes = {
       "Ship behind a controlled rollout and use real usage evidence to drive the next iteration."
     ]
   },
+  brand: {
+    label: "Brand Identity + Positioning",
+    keywords: ["brand","branding","positioning","perception","identity","reputation","value proposition","homepage message","how we are seen"],
+    agents: ["ALPHA","SCOUT","FORGE","PULSE","SCRIBE"],
+    forks: ["First-party interviews","CRM notes","support feedback","analytics"],
+    outcome: "Close one evidenced gap between current market perception and the desired identity through one measurable, highest-visibility change.",
+    approval: "Human approval before changing public positioning, homepage copy, proposals, outreach, pricing, or production surfaces.",
+    plan: [
+      "Collect verbatim customer or qualified-prospect language with source, date, and touchpoint; return EVIDENCE_REQUIRED if none exists.",
+      "Compare current language with the specific desired identity; name one gap and the concrete cause reinforcing it.",
+      "Choose only the one or two Aaker perspectives that directly close the gap: product, organization, person, or symbol.",
+      "State functional, emotional, and self-expressive value; select the strongest benefit without inventing sentiment.",
+      "Propose one highest-visibility move, one stop-doing rule, and an owned 30-day metric for human review."
+    ]
+  },
   growth: {
     label: "Growth + Revenue",
     keywords: ["customer","customers","sales","marketing","seo","lead","leads","revenue","outreach","campaign","offer","conversion","audience","brand","profit","sell","distribution"],
