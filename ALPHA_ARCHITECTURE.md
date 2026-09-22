@@ -137,3 +137,35 @@ Prefer APIs, isolated services, or narrowly reused patterns when that reduces co
 - user can copy/download the brief
 - site clearly distinguishes public demo capability from connected production capability
 - consequential actions remain human-approved
+
+
+## Current implementation truth
+
+The public Mission Lab is a deterministic browser classifier. It is not yet a durable multi-agent runtime: it does not execute specialist agents, ingest evidence objects, persist mission state, perform cross-agent verification, or measure business outcomes. Public copy and demonstrations must preserve that distinction.
+
+Do not increase the roster, add more fixed templates, or describe planned integrations as connected capability. The next production priorities are:
+
+1. durable mission ledger with idempotent state transitions
+2. structured evidence objects with provenance and freshness
+3. real role handoffs using compact context packets
+4. independent EVAL verification before consequential approval
+5. outcome telemetry tied to the mission's baseline and target
+6. only then, additional agents or integrations
+
+## Brand identity gate
+
+Brand, positioning, homepage, proposal, and outreach changes use the executable gate in `brand/`.
+
+Workflow:
+
+```text
+EVIDENCE_REQUIRED
+  -> GAP_CONFIRMED
+  -> IDENTITY_SELECTED
+  -> VALUE_SELECTED
+  -> READY_FOR_HUMAN_REVIEW
+  -> APPROVED_FOR_TEST
+  -> KEEP / ITERATE / REVERT
+```
+
+The gate requires attributable current-perception evidence, one or two relevant identity perspectives, functional plus emotional or self-expressive value, one highest-visibility move, a stop-doing rule, and an owned 30-day measure. Desired identity is not treated as evidence of current market perception.
