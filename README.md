@@ -50,3 +50,18 @@ The browser Mission Lab is the public front door. Later phases connect approved 
 ## Safety model
 
 ALPHA follows a context-first, least-privilege model. Publishing, payments, outreach, production deployments, destructive changes, sensitive security activity, or other consequential actions require explicit human authorization. Security workflows must remain limited to owned or explicitly authorized scope.
+
+
+## Current capability boundary
+
+The public Mission Lab is a deterministic local planning demo, not a connected multi-agent executor. It classifies a mission and prepares a first-pass brief; it does not yet run specialist agents, persist a mission ledger, or verify real-world outcomes. Those capabilities remain gated roadmap work.
+
+## Brand identity gate
+
+The `brand/` directory adds ALPHA's evidence-first brand decision workflow for Prime24AI and the active project portfolio. It blocks perception claims when customer/prospect evidence is missing, limits identity selection to the relevant Aaker perspective(s), requires functional plus emotional or self-expressive value, and permits only one measurable 30-day move after human approval.
+
+Run its validator with:
+
+```bash
+node brand/brand-identity-gate.test.js
+```
