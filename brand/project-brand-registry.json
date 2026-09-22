@@ -19,6 +19,15 @@
       "status": "EVIDENCE_REQUIRED"
     },
     {
+      "id": "agentforce-hq-jarvis",
+      "name": "AgentForce HQ (legacy site)",
+      "firstEncounter": "agentforce-hq-jarvis.darnley-weekes.chatgpt.site",
+      "desiredIdentitySeed": "A legacy ALPHA presentation surface with a clear migration or retirement path",
+      "knownFunctionalBenefit": "Presents the agent roster and earlier product framing",
+      "status": "CONSOLIDATE_OR_RETIRE",
+      "decisionReason": "It overlaps ALPHA Agent Force and can split trust, traffic, and positioning."
+    },
+    {
       "id": "workflow-fieldkit",
       "name": "Learn / Workflow Fieldkit",
       "firstEncounter": "learn.prime24ai.com lesson landing page",
@@ -84,4 +93,3 @@
     }
   ]
 }
-
