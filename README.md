@@ -7,7 +7,7 @@ ALPHA Mission Control is a human-supervised, fork-powered AI action engine. A vi
 The first public release is intentionally lightweight and safe:
 
 - interactive mission intake in the browser
-- six mission modes: operations, research, product/engineering, growth, digital exposure/security, and career/opportunity
+- seven mission modes: operations, research, product/engineering, brand identity/positioning, growth, digital exposure/security, and career/opportunity
 - specialist-agent routing
 - candidate GitHub fork selection
 - five-step execution plans
