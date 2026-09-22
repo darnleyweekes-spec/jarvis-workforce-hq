@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "policy": "No project may infer current perception or claim an emotional benefit without attributable evidence.",
+  "projects": [
+    {
+      "id": "prime24ai",
+      "name": "Prime24AI",
+      "firstEncounter": "prime24ai.com homepage and outbound proposal",
+      "desiredIdentitySeed": "A practical AI workflow company that ships supervised, measurable improvements",
+      "knownFunctionalBenefit": "Scoping and implementing narrow workflow automation",
+      "status": "EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "alpha-agent-force",
+      "name": "ALPHA Agent Force",
+      "firstEncounter": "agents.prime24ai.com homepage and agent roster",
+      "desiredIdentitySeed": "A governed specialist-agent operating system with clear approval boundaries",
+      "knownFunctionalBenefit": "Routes missions to the smallest useful specialist team",
+      "status": "EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "workflow-fieldkit",
+      "name": "Learn / Workflow Fieldkit",
+      "firstEncounter": "learn.prime24ai.com lesson landing page",
+      "desiredIdentitySeed": "Hands-on workflow learning for people who need useful results at work",
+      "knownFunctionalBenefit": "Teaches role-specific AI workflows through interactive lessons",
+      "status": "EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "pitchme",
+      "name": "PitchMe",
+      "firstEncounter": "pitchme.prime24ai.com generator",
+      "desiredIdentitySeed": "A fast path from raw experience to a credible, specific pitch",
+      "knownFunctionalBenefit": "Turns user inputs into tailored pitch material",
+      "status": "EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "paws-and-power",
+      "name": "Paws & Power",
+      "firstEncounter": "pawsandpowerfit.prime24ai.com homepage",
+      "desiredIdentitySeed": "A shared routine for dog moms who want their own fitness and their dog's activity to reinforce each other",
+      "knownFunctionalBenefit": "Combines human meal and fitness prompts with dog activity prompts",
+      "status": "EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "primesignal",
+      "name": "PrimeSignal",
+      "firstEncounter": "primesignal.prime24ai.com workspace and homepage",
+      "desiredIdentitySeed": "The provider-neutral evidence and incident-communication layer for small technical teams",
+      "knownFunctionalBenefit": "Turns monitoring signals into impact context, evidence, and reviewed communication",
+      "status": "EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "buyercue",
+      "name": "BuyerCue",
+      "firstEncounter": "buyercue.prime24ai.com test page",
+      "desiredIdentitySeed": "The practical test of whether an AI buyer can understand and shop a store",
+      "knownFunctionalBenefit": "Tests ecommerce readiness for agentic shopping",
+      "status": "EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "reviewlift",
+      "name": "ReviewLift",
+      "firstEncounter": "ReviewLift homepage and review-request flow",
+      "desiredIdentitySeed": "A consent-first way to collect customer reviews people can trust",
+      "knownFunctionalBenefit": "Collects verified review requests with consent and auditability",
+      "status": "EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "medbill-scout",
+      "name": "MedBill Scout",
+      "firstEncounter": "medbill.prime24ai.com bill-review page",
+      "desiredIdentitySeed": "A calm second look that shows patients what to question before paying",
+      "knownFunctionalBenefit": "Flags bill issues and prepares dispute or assistance letters",
+      "status": "EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "credentialflow-ai",
+      "name": "CredentialFlow AI",
+      "firstEncounter": "sales proposal and workflow walkthrough",
+      "desiredIdentitySeed": "A supervised credentialing operations layer that keeps packets moving without hiding accountability",
+      "knownFunctionalBenefit": "Tracks documents, expirations, enrollment, follow-up, approvals, and audit records",
+      "status": "EVIDENCE_REQUIRED"
+    }
+  ]
+}
+
