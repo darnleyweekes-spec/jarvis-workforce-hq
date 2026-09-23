@@ -65,3 +65,14 @@ Run its validator with:
 ```bash
 node brand/brand-identity-gate.test.js
 ```
+
+
+## Executable runtime core
+
+`alpha-runtime/` contains a provider-neutral Python execution core with SQLite persistence, hash-chained append-only events, evidence provenance, scoped specialist contracts, independent verification, human approval bound to exact action payloads, and fail-closed idempotent action reservations. Run its standard-library test suite with:
+
+```bash
+python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
+```
+
+This is an executable core, not yet the connected production ALPHA service: there is no API server, authentication, tenant isolation, model/provider adapter, hosted storage, or Sites UI connection. See `alpha-runtime/README.md` for the integration contract and deployment limitations.
