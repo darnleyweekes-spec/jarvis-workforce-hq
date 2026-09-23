@@ -33,7 +33,7 @@ jobs:
       - name: Check JavaScript syntax
         run: node --check script.js
       - name: Test ALPHA runtime core
-        run: python -m unittest discover -s alpha-runtime -p 'test_*.py' -v
+        run: python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
       - name: Check ALPHA Mission Lab contract
         run: |
           python - <<'PY'
