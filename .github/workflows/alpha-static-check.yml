@@ -9,6 +9,7 @@ on:
       - script.js
       - README.md
       - ALPHA_ARCHITECTURE.md
+      - alpha-runtime/**
       - .github/workflows/alpha-static-check.yml
   pull_request:
     branches: [main]
@@ -30,6 +31,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check JavaScript syntax
         run: node --check script.js
+      - name: Test ALPHA runtime core
+        run: python -m unittest discover -s alpha-runtime -p 'test_*.py' -v
       - name: Check ALPHA Mission Lab contract
         run: |
           python - <<'PY'
