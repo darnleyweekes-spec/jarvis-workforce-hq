@@ -2,7 +2,7 @@ name: ALPHA static checks
 
 on:
   push:
-    branches: [alpha-mission-control]
+    branches: [main, alpha-mission-control]
     paths:
       - index.html
       - styles.css
@@ -19,6 +19,7 @@ on:
       - script.js
       - README.md
       - ALPHA_ARCHITECTURE.md
+      - alpha-runtime/**
       - .github/workflows/alpha-static-check.yml
 
 permissions:
