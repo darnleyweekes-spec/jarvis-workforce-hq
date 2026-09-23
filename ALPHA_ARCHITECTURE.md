@@ -169,3 +169,12 @@ EVIDENCE_REQUIRED
 ```
 
 The gate requires attributable current-perception evidence, one or two relevant identity perspectives, functional plus emotional or self-expressive value, one highest-visibility move, a stop-doing rule, and an owned 30-day measure. Desired identity is not treated as evidence of current market perception.
+
+
+## Executable runtime core status
+
+The initial provider-neutral execution core is implemented in `alpha-runtime/`. It persists mission state in SQLite, records append-only hash-chained events, carries evidence provenance, hands each specialist a bounded typed task, independently verifies returned criteria, and gates consequential actions on approval tied to the exact payload hash. Action keys are idempotent; interrupted actions fail closed for manual reconciliation.
+
+This core is not yet a deployed production service. The following remain before live customer workloads: authenticated API and approver identity, tenant isolation, persistent hosted storage/concurrency strategy, real specialist/provider adapters, domain-specific independent verifiers, operational observability, backup/restore, security review, and UI integration. The public browser Mission Lab remains a separate local classifier and must not be described as connected to this runtime until an authenticated service is actually deployed and validated.
+
+The runtime test suite covers persistence across store re-instantiation, event chain integrity, evidence scoping, failed verification, approval binding, duplicate requests, and ambiguous interrupted actions. Run it using the command in `alpha-runtime/README.md`.
