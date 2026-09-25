@@ -37,6 +37,12 @@ urgent misses, review rate, observed API latency, total runtime, and estimated i
 It stops before making a call when the key is absent. A ten-example synthetic result is a
 smoke test, not evidence that customer intake can be routed automatically.
 
+When Jev access is unavailable, `benchmark_groq.py` runs the same ten synthetic examples
+through Groq GPT OSS 20B strict structured output. Set `GROQ_API_KEY` outside the repository,
+then run `python3 alpha-runtime/benchmark_groq.py`. It records the same routing outcomes and
+API latency, but does not claim Jev-style calibrated probabilities. Every proposed route
+requires manual review. No production integration or live customer traffic is included.
+
 ## Host integration contract
 
 1. Create a persistent SQLite file outside any public/static asset directory and initialize `SQLiteMissionStore`.
