@@ -23,6 +23,13 @@ python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
 
 Five tests cover the durable request-to-verified-result path, process restart, evidence handoff, approval mismatch, duplicate execution, interrupted action handling, and verifier rejection.
 
+The optional `shadow_decisions.py` adapter and its three tests exercise a typed intake decision
+through the same mission lifecycle with a stub provider. It records a proposed route only;
+it has no Jev API connection, message sender, or routing executor. Confidence thresholds in
+that adapter are illustrative, not calibrated for customer data. Do not enable live routing
+from these local tests; first evaluate a real provider on labeled requests and measure
+urgent misses, review rate, end-to-end latency, and cost against the existing workflow.
+
 ## Host integration contract
 
 1. Create a persistent SQLite file outside any public/static asset directory and initialize `SQLiteMissionStore`.
@@ -46,4 +53,3 @@ Five tests cover the durable request-to-verified-result path, process restart, e
 `INTAKE -> PLANNED -> EXECUTING -> VERIFICATION_FAILED | VERIFIED | AWAITING_APPROVAL -> ACTION_COMPLETED`
 
 Specialist exceptions transition to `FAILED` and are not retried automatically because the runtime cannot know whether an adapter already caused a side effect.
-
