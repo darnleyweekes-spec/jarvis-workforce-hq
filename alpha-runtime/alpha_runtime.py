@@ -388,7 +388,8 @@ class AlphaRuntime:
                                   "MISSION_BLOCKED", {"reason": verification.rationale})
             raise VerificationFailed(verification.rationale)
         pending_actions = [a for a in result.proposed_actions if a.consequential]
-        if pending_actions and request.approval_required:
+        # A request flag cannot waive approval for a consequential proposed action.
+        if pending_actions:
             self.store.transition(request.mission_id, "EXECUTING", "AWAITING_APPROVAL",
                                   "APPROVAL_REQUIRED", {"action_ids": [a.action_id for a in pending_actions]})
         else:
