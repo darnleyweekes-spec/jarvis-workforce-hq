@@ -87,6 +87,15 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(repeated, {"sent": True})
         self.assertEqual(len(calls), 1)
 
+    def test_request_cannot_waive_approval_for_consequential_action(self):
+        action = ProposedAction("publish", "status.publish", {"body": "Incident update"})
+        request = MissionRequest("Draft update", ["draft prepared"], approval_required=False,
+                                 mission_id="mission-1")
+        runtime = AlphaRuntime(SQLiteMissionStore(self.db), {"SCRIBE": DemoSpecialist(action)})
+        state = runtime.submit(request, "SCRIBE")
+        self.assertEqual(state["status"], "AWAITING_APPROVAL")
+        self.assertTrue(SQLiteMissionStore(self.db).verify_event_chain("mission-1"))
+
     def test_interrupted_action_fails_closed_for_manual_reconciliation(self):
         action = ProposedAction("write-config", "config.update", {"setting": "safe"})
         store = SQLiteMissionStore(self.db)
