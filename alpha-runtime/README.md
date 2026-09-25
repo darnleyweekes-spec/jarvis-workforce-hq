@@ -30,6 +30,13 @@ that adapter are illustrative, not calibrated for customer data. Do not enable l
 from these local tests; first evaluate a real provider on labeled requests and measure
 urgent misses, review rate, end-to-end latency, and cost against the existing workflow.
 
+For an actual Jev API measurement, set `TYPESAFE_API_KEY` outside the repository and run
+`python3 alpha-runtime/benchmark_jev.py`. It uses ten labeled synthetic intake examples,
+serial API calls, and a temporary SQLite mission store. It reports category matches,
+urgent misses, review rate, observed API latency, total runtime, and estimated input cost.
+It stops before making a call when the key is absent. A ten-example synthetic result is a
+smoke test, not evidence that customer intake can be routed automatically.
+
 ## Host integration contract
 
 1. Create a persistent SQLite file outside any public/static asset directory and initialize `SQLiteMissionStore`.
