@@ -76,3 +76,12 @@ python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
 ```
 
 This is an executable core, not yet the connected production ALPHA service: there is no API server, authentication, tenant isolation, model/provider adapter, hosted storage, or Sites UI connection. See `alpha-runtime/README.md` for the integration contract and deployment limitations.
+
+## Project contracts
+
+`project-kit/` contains scoped planning contracts for ten current projects and a
+new-idea template. It asks for the customer, problem, workflow, evidence,
+baseline, target, and approval boundary before a mission is prepared. It grants
+no tool access and makes no claim that the Sites are connected to ALPHA. Run
+`python3 project-kit/project_contract.py check project-kit/projects.json` and
+see `project-kit/README.md` for the onboarding workflow.

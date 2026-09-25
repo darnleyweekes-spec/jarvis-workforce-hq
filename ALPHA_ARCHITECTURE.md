@@ -178,3 +178,13 @@ The initial provider-neutral execution core is implemented in `alpha-runtime/`. 
 This core is not yet a deployed production service. The following remain before live customer workloads: authenticated API and approver identity, tenant isolation, persistent hosted storage/concurrency strategy, real specialist/provider adapters, domain-specific independent verifiers, operational observability, backup/restore, security review, and UI integration. The public browser Mission Lab remains a separate local classifier and must not be described as connected to this runtime until an authenticated service is actually deployed and validated.
 
 The runtime test suite covers persistence across store re-instantiation, event chain integrity, evidence scoping, failed verification, approval binding, duplicate requests, and ambiguous interrupted actions. Run it using the command in `alpha-runtime/README.md`.
+
+## Reuse across products
+
+`project-kit/` records a small project contract before ALPHA plans work: who
+has the problem, why now, the smallest useful workflow, baseline, target,
+independent proof, and the approval boundary. New ideas start with incomplete
+contracts that must be filled before mission creation. The ten current product
+entries are planning hypotheses, with no connected tools. This creates a
+consistent path for project evaluation without implying that any existing Site
+has been wired to the runtime.
