@@ -23,6 +23,26 @@ python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
 
 Five tests cover the durable request-to-verified-result path, process restart, evidence handoff, approval mismatch, duplicate execution, interrupted action handling, and verifier rejection.
 
+The optional `shadow_decisions.py` adapter and its three tests exercise a typed intake decision
+through the same mission lifecycle with a stub provider. It records a proposed route only;
+it has no Jev API connection, message sender, or routing executor. Confidence thresholds in
+that adapter are illustrative, not calibrated for customer data. Do not enable live routing
+from these local tests; first evaluate a real provider on labeled requests and measure
+urgent misses, review rate, end-to-end latency, and cost against the existing workflow.
+
+For an actual Jev API measurement, set `TYPESAFE_API_KEY` outside the repository and run
+`python3 alpha-runtime/benchmark_jev.py`. It uses ten labeled synthetic intake examples,
+serial API calls, and a temporary SQLite mission store. It reports category matches,
+urgent misses, review rate, observed API latency, total runtime, and estimated input cost.
+It stops before making a call when the key is absent. A ten-example synthetic result is a
+smoke test, not evidence that customer intake can be routed automatically.
+
+When Jev access is unavailable, `benchmark_groq.py` runs the same ten synthetic examples
+through Groq GPT OSS 20B strict structured output. Set `GROQ_API_KEY` outside the repository,
+then run `python3 alpha-runtime/benchmark_groq.py`. It records the same routing outcomes and
+API latency, but does not claim Jev-style calibrated probabilities. Every proposed route
+requires manual review. No production integration or live customer traffic is included.
+
 ## Host integration contract
 
 1. Create a persistent SQLite file outside any public/static asset directory and initialize `SQLiteMissionStore`.
@@ -46,4 +66,3 @@ Five tests cover the durable request-to-verified-result path, process restart, e
 `INTAKE -> PLANNED -> EXECUTING -> VERIFICATION_FAILED | VERIFIED | AWAITING_APPROVAL -> ACTION_COMPLETED`
 
 Specialist exceptions transition to `FAILED` and are not retried automatically because the runtime cannot know whether an adapter already caused a side effect.
-
