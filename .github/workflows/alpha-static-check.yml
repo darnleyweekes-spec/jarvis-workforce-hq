@@ -10,6 +10,8 @@ on:
       - README.md
       - ALPHA_ARCHITECTURE.md
       - alpha-runtime/**
+      - project-kit/**
+      - brand/project-brand-registry.json
       - .github/workflows/alpha-static-check.yml
   pull_request:
     branches: [main]
@@ -20,6 +22,8 @@ on:
       - README.md
       - ALPHA_ARCHITECTURE.md
       - alpha-runtime/**
+      - project-kit/**
+      - brand/project-brand-registry.json
       - .github/workflows/alpha-static-check.yml
 
 permissions:
@@ -34,6 +38,10 @@ jobs:
         run: node --check script.js
       - name: Test ALPHA runtime core
         run: python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
+      - name: Check project contracts and new-idea gate
+        run: |
+          python3 project-kit/project_contract.py check project-kit/projects.json
+          python3 -m unittest discover -s project-kit -p 'test_*.py' -v
       - name: Check ALPHA Mission Lab contract
         run: |
           python - <<'PY'

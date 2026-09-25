@@ -15,6 +15,10 @@ class ProjectContractTests(unittest.TestCase):
         profiles = json.loads((ROOT / "projects.json").read_text())["projects"]
         self.assertEqual(len(profiles), 10)
         self.assertEqual(len({profile["id"] for profile in profiles}), len(profiles))
+        brand = json.loads((ROOT.parent / "brand" / "project-brand-registry.json").read_text())
+        active_ids = {item["id"] for item in brand["projects"]
+                      if item["status"] != "CONSOLIDATE_OR_RETIRE"}
+        self.assertEqual({profile["id"] for profile in profiles}, active_ids)
         for profile in profiles:
             with self.subTest(project=profile["id"]):
                 self.assertEqual(contract.validate(profile), [])
