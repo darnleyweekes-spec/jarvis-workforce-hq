@@ -7,13 +7,16 @@ This is a provider-neutral Python runtime core for supervised ALPHA missions. It
 - SQLite persistence for mission state and evidence across process restarts.
 - Append-only, hash-chained lifecycle events; database triggers reject event edits and deletion.
 - Typed request, evidence, scoped specialist-task, action, and verification contracts.
+- Criterion-level `ClaimEvidenceContract` records that prevent a specialist from declaring success without verifiable support.
+- Explicit `MissionState` persistence for known facts, unresolved requirements, completed requirements, assumptions, blockers, and last verified progress.
+- Mission-state progress detection with a no-progress counter and configurable stall threshold.
 - Injected specialist and verifier interfaces; no provider SDK is required by the core.
 - Independent contract verification blocks failed missions.
 - Consequential actions require an approval bound to the exact action payload hash.
 - Idempotency key passed to the action adapter; successful repeat requests return stored results.
 - Interrupted action reservations fail closed for manual reconciliation instead of retrying blindly.
 - Replayable evaluation snapshots with stable trajectory digests.
-- Mission scoring for verification, event-chain integrity, evidence provenance, failure state, and mission success.
+- Mission scoring for verification, evidence-contract compliance, event-chain integrity, evidence provenance, stalled state, failure state, and mission success.
 - Deterministic behavior-diverse regression subset selection that retains failed/severe cases first.
 - Baseline-vs-candidate reliability comparison and configurable reliability gates.
 
@@ -25,7 +28,53 @@ Requires Python 3.10+ and only the standard library.
 python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
 ```
 
-The runtime and evaluation tests cover the durable request-to-verified-result path, process restart, evidence handoff, approval mismatch, duplicate execution, interrupted action handling, verifier rejection, replayable trajectory export, reliability gating, approval-state evaluation, regression-case retention, and baseline/candidate comparison.
+The runtime and evaluation tests cover the durable request-to-verified-result path, process restart, evidence handoff, approval mismatch, duplicate execution, interrupted action handling, verifier rejection, false-success blocking, explicit mission-state persistence, stall detection, replayable trajectory export, reliability gating, approval-state evaluation, regression-case retention, and baseline/candidate comparison.
+
+## Evidence-backed completion
+
+A specialist may only mark a success criterion complete when it returns a matching `ClaimEvidenceContract` with `status="verified"` and an explicit verification method.
+
+```python
+from alpha_runtime import ClaimEvidenceContract, SpecialistResult
+
+result = SpecialistResult(
+    summary="Prepared draft",
+    completed_criteria=("draft prepared",),
+    claim_evidence=(
+        ClaimEvidenceContract(
+            criterion="draft prepared",
+            status="verified",
+            verification_method="artifact:draft_output",
+        ),
+    ),
+)
+```
+
+Evidence IDs referenced by a claim contract must exist in the mission's task or specialist evidence. For completion that is verified from an artifact, state, or direct observation instead of an evidence record, use an explicit `artifact:`, `state:`, or `observation:` verification method. Missing, unknown, or unsupported completion claims fail independent verification and move the mission to `VERIFICATION_FAILED`.
+
+This establishes the rule:
+
+`CLAIM -> REQUIRED SUPPORT -> OBSERVED SUPPORT -> VERIFIED | NOT VERIFIED | UNKNOWN`
+
+`UNKNOWN` and `NOT VERIFIED` never count as success.
+
+## Explicit mission state
+
+Every mission is initialized with a durable state object rather than relying on accumulated conversation history:
+
+- `known_facts`
+- `unresolved_requirements`
+- `completed_requirements`
+- `assumptions`
+- `blocking_conditions`
+- `last_verified_progress`
+- `revision`
+
+The runtime derives a state update after specialist execution, persists it to SQLite, and records a hash-chained `MISSION_STATE_UPDATED` event. Repeating the same semantic state increments `no_progress_count`; `store.is_stalled(mission_id, threshold=2)` allows the host or evaluator to stop or recover a mission that is looping without verified progress.
+
+The intended context pattern is:
+
+`REQUEST -> RETRIEVED EVIDENCE -> EXPLICIT MISSION STATE -> SPECIALIST -> CLAIM EVIDENCE -> STATE UPDATE -> VERIFICATION`
 
 ## Evaluation harness
 
@@ -58,12 +107,16 @@ The intended engineering loop is:
 
 `MISSION -> TRAJECTORY -> EVALUATE -> CLASSIFY FAILURE -> REGRESSION CORPUS -> CHANGE -> REPLAY -> COMPARE -> DEPLOY`
 
-The first regression selector is deliberately dependency-free. It retains failures first and then chooses behavior-diverse trajectories using recorded mission/event/check/evidence features. Replace or augment it with embedding-backed trajectory selection only when mission volume justifies the added dependency and the embedding method is itself evaluated.
+The first regression selector is deliberately dependency-free. It retains failures, blocked false-success attempts, and stalled missions first, then chooses behavior-diverse trajectories using recorded mission/event/check/evidence/state features. Replace or augment it with embedding-backed trajectory selection only when mission volume justifies the added dependency and the embedding method is itself evaluated.
 
 ### Metrics currently supported
 
 - Mission success and terminal success.
 - Verification pass/fail when a verification record exists.
+- Claim-evidence contract pass rate.
+- False-success rate and false-success attempts blocked by verification.
+- Mission-state stall rate.
+- Trajectory horizon/event count.
 - Hash-chain integrity.
 - Evidence/context provenance completeness.
 - Approval-required and action-completed state.
@@ -83,12 +136,14 @@ Add those metrics only after the runtime records the underlying facts explicitly
 ## Host integration contract
 
 1. Create a persistent SQLite file outside any public/static asset directory and initialize `SQLiteMissionStore`.
-2. Implement one narrow `Specialist.run(task)` adapter per role. Give each only its task fields and explicitly allowed tools; never pass the full conversation history or credentials.
-3. Supply a domain verifier when generic completion checks are insufficient. Keep verification independent from the specialist that produced the result.
-4. Call `AlphaRuntime.submit(request, role, evidence)` to plan, run, verify, and persist the proposal.
-5. Show `AWAITING_APPROVAL` proposals to an authenticated human. Call `approve_and_execute` only after authorization, with an action adapter that honors the provided idempotency key.
-6. Record the external system's idempotency behavior and reconciliation method. If an adapter cannot guarantee idempotency, do not automatically retry it.
-7. After missions complete, evaluate them with `AlphaEvaluationHarness`; preserve failed/severe trajectories in the regression corpus and gate consequential runtime changes on baseline-vs-candidate results.
+2. Implement one narrow `Specialist.run(task)` adapter per role. Give each only its task fields, explicit mission state, and explicitly allowed tools; never pass the full conversation history or credentials.
+3. Require every completed success criterion to include a valid `ClaimEvidenceContract`. Do not convert unsupported claims into success.
+4. Supply a domain verifier when generic completion checks are insufficient. Keep verification independent from the specialist that produced the result.
+5. Call `AlphaRuntime.submit(request, role, evidence)` to plan, run, update state, verify, and persist the proposal.
+6. If repeated state updates do not change facts, requirements, assumptions, or blockers, treat the mission as stalled and recover or escalate instead of blindly continuing.
+7. Show `AWAITING_APPROVAL` proposals to an authenticated human. Call `approve_and_execute` only after authorization, with an action adapter that honors the provided idempotency key.
+8. Record the external system's idempotency behavior and reconciliation method. If an adapter cannot guarantee idempotency, do not automatically retry it.
+9. After missions complete, evaluate them with `AlphaEvaluationHarness`; preserve failed/severe trajectories in the regression corpus and gate consequential runtime changes on baseline-vs-candidate results.
 
 ## Current limitations (do not describe as production-ready)
 
