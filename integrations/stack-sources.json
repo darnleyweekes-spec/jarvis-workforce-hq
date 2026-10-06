@@ -68,5 +68,10 @@
     "name": "agentic-inbox",
     "sha": "48039bb6785af34e592c2966f87cde2b255c4c80",
     "path": "integrations/vendor/agentic-inbox"
+  },
+  {
+    "name": "penpot",
+    "sha": "9d08e26cb3d0ed003a5cf7df37adc778019bf75e",
+    "path": "integrations/vendor/penpot"
   }
 ]

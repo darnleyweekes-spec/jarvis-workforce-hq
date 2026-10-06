@@ -183,6 +183,20 @@
         "MCP send tools lack enforced human approval; no live mailbox connection"
       ],
       "execution_enabled": false
+    },
+    {
+      "id": "penpot",
+      "name": "Penpot",
+      "repository": "https://github.com/darnleyweekes-spec/penpot",
+      "commit": "9d08e26cb3d0ed003a5cf7df37adc778019bf75e",
+      "source_path": "integrations/vendor/penpot",
+      "role": "design-prototype-and-design-handoff",
+      "status": "library_verified",
+      "blockers": [
+        "Docker and persistent database host unavailable",
+        "Live design workspace and MCP plugin not connected"
+      ],
+      "execution_enabled": false
     }
   ]
 }

@@ -7,10 +7,11 @@ from capability_registry import load_capabilities, prepare_capability
 class RegistryTests(unittest.TestCase):
     def test_all_requested_sources_are_pinned(self):
         entries = load_capabilities()
-        self.assertEqual(len(entries), 14)
+        self.assertEqual(len(entries), 15)
         self.assertIn('python-training', entries)
         self.assertIn('recordly', entries)
         self.assertIn('agentic-inbox', entries)
+        self.assertIn('penpot', entries)
         self.assertTrue(all(len(e['commit']) == 40 for e in entries.values()))
 
     def test_scoped_handoff_cannot_execute_or_complete(self):
