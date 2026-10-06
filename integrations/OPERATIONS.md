@@ -24,7 +24,7 @@ No provider API key is configured. Do not paste secrets in chat or commit them. 
 
 Both full Chromium and headless-shell downloads returned invalid archives. Native browser automation remains blocked; use Work web search for current research.
 
-The first Langflow launch was blocked by automatic review because it attempted Scarf telemetry. A safer launch sets `DO_NOT_TRACK=true`, `LANGFLOW_DO_NOT_TRACK=true` and `LITELLM_LOCAL_MODEL_COST_MAP=true`, uses Uvicorn directly to avoid the restricted Gunicorn control socket, and binds only to loopback with generated temporary credentials. No live provider flow has been tested.
+The first Langflow launch was blocked by automatic review because it attempted Scarf telemetry. A safer launch sets `DO_NOT_TRACK=true`, `LANGFLOW_DO_NOT_TRACK=true` and `LITELLM_LOCAL_MODEL_COST_MAP=true`, uses Uvicorn directly to avoid the restricted Gunicorn control socket, and binds only to loopback with generated temporary credentials. The safer launch passed `/health` with HTTP 200 and shut down cleanly. No live provider flow has been tested.
 
 Do not mark these source components as executable production tools until their own service, credentials and end-to-end checks pass. Prepared capability packets remain read-only.
 
