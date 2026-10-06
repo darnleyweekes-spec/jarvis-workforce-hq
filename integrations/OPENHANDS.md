@@ -60,3 +60,6 @@ python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
 The handoff tests check mission isolation, read-only ledger behavior, tool
 permission denial, and invalid-ledger rejection. Agent-server/model execution
 is not tested without an isolated configured backend.
+
+The additional source catalog is documented in `STACK.md`. These tools remain
+optional mission-scoped components rather than one shared dependency environment.

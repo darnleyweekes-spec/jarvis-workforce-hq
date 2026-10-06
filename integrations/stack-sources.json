@@ -1,0 +1,67 @@
+[
+  {
+    "name": "ComfyUI",
+    "sha": "7d11ec31cb700d881fdf2d73731ecde0093b9540",
+    "path": "integrations/vendor/ComfyUI"
+  },
+  {
+    "name": "Handy",
+    "sha": "b50b52a8e398b8f07a498e18d9a19e3ad8bdf57e",
+    "path": "integrations/vendor/Handy"
+  },
+  {
+    "name": "LibreChat",
+    "sha": "45cc53c40b47645b887c3bb996168e06aaa83f4c",
+    "path": "integrations/vendor/LibreChat"
+  },
+  {
+    "name": "Recordly",
+    "sha": "4fda917aff39729eb22e72bbb881c6b7123d4033",
+    "path": "integrations/vendor/Recordly"
+  },
+  {
+    "name": "anything-llm",
+    "sha": "895ca91b4f0c5370b3a70e1d3d269bbbe429cdc4",
+    "path": "integrations/vendor/anything-llm"
+  },
+  {
+    "name": "browser-use",
+    "sha": "a3e3cc5dd11dd219884532fd37d67775cd66c74d",
+    "path": "integrations/vendor/browser-use"
+  },
+  {
+    "name": "chatterbox",
+    "sha": "5de7a54aa4e5e2baadb0182dde554908b48b85c2",
+    "path": "integrations/vendor/chatterbox"
+  },
+  {
+    "name": "crawl4ai",
+    "sha": "7e801521428ee12509994d39151006f64055ebe3",
+    "path": "integrations/vendor/crawl4ai"
+  },
+  {
+    "name": "dify",
+    "sha": "1369a2cdfc12c6fdbf263c8c4abd23eff202e435",
+    "path": "integrations/vendor/dify"
+  },
+  {
+    "name": "langflow",
+    "sha": "3325c4642c489bfc2e2f4c9f3c63a32961f9581f",
+    "path": "integrations/vendor/langflow"
+  },
+  {
+    "name": "maxun",
+    "sha": "e174b288c8ceafe39de410c057ab2a694fd263b5",
+    "path": "integrations/vendor/maxun"
+  },
+  {
+    "name": "python-training",
+    "sha": "0c536090508181dcfcd64fbcfbfa507cda2db93c",
+    "path": "integrations/vendor/python-training"
+  },
+  {
+    "name": "supabase",
+    "sha": "b97ad08be568ac68a0aadbdbb7775173d858c7b1",
+    "path": "integrations/vendor/supabase"
+  }
+]
