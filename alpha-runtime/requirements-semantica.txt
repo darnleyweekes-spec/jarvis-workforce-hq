@@ -1,0 +1,2 @@
+# Pin the user's fork. Keep this optional; the core uses the standard library.
+semantica @ git+https://github.com/darnleyweekes-spec/semantica.git@9a71df67bb50800bd74ebef25f4472726c571458

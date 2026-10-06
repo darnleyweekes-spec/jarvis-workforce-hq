@@ -159,3 +159,38 @@ Add those metrics only after the runtime records the underlying facts explicitly
 `INTAKE -> PLANNED -> EXECUTING -> VERIFICATION_FAILED | VERIFIED | AWAITING_APPROVAL -> ACTION_COMPLETED`
 
 Specialist exceptions transition to `FAILED` and are not retried automatically because the runtime cannot know whether an adapter already caused a side effect.
+
+## Semantica context integration
+
+The optional `semantica_context.py` adapter projects one mission from the ALPHA
+SQLite ledger into a Semantica `ContextGraph`. It retains evidence source,
+classification, retrieval time, expiry, claim references, verification records,
+and the ordered event chain. An invalid ledger or unknown evidence reference
+blocks graph construction. Each call builds a fresh graph for one mission.
+SQLite stays authoritative; rebuilding the graph does not change approval or
+mission state. Keep the graph on the trusted host, outside public assets.
+
+Install the pinned Prime24AI fork in the host environment (Python 3.10–3.13):
+
+```bash
+python3 -m venv .venv-semantica
+.venv-semantica/bin/python -m pip install -r alpha-runtime/requirements-semantica.txt
+.venv-semantica/bin/python -m unittest discover -s alpha-runtime -p 'test_*.py' -v
+```
+
+Use from a host that has `alpha-runtime` on its Python path:
+
+```python
+from alpha_runtime import SQLiteMissionStore
+from semantica_context import SemanticaContext
+
+store = SQLiteMissionStore('/private/alpha/missions.sqlite3')
+graph = SemanticaContext(store).build_graph('mission-123')
+# An existing AlphaRuntime also exposes runtime.context_graph('mission-123').
+```
+
+This adds graph context to the executable core. It does not deploy a service or
+connect the public Sites UI. No LLM credentials, external graph database, or
+model provider is required. Hypotheses remain labeled hypotheses; graph links
+are recorded relationships, not proof of causation. Graph output does not grant
+permission to act and must not replace ALPHA's independent verification gates.

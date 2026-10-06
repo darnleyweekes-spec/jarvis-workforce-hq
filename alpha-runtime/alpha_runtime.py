@@ -797,6 +797,11 @@ class AlphaRuntime:
             )
         return self.store.get(request.mission_id)
 
+    def context_graph(self, mission_id: str):
+        """Build optional Semantica context without changing mission state."""
+        from semantica_context import SemanticaContext
+        return SemanticaContext(self.store).build_graph(mission_id)
+
     def approve_and_execute(self, mission_id: str, action: ProposedAction, approver: str,
                             executor: ActionExecutor) -> dict[str, Any]:
         state = self.store.get(mission_id)
