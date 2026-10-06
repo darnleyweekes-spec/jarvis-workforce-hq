@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "capabilities": [
+    {
+      "id": "comfyui",
+      "name": "ComfyUI",
+      "repository": "https://github.com/darnleyweekes-spec/ComfyUI",
+      "commit": "7d11ec31cb700d881fdf2d73731ecde0093b9540",
+      "source_path": "integrations/vendor/ComfyUI",
+      "role": "visual-production",
+      "status": "library_verified",
+      "blockers": [
+        "No model weights installed; generation not tested"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "handy",
+      "name": "Handy",
+      "repository": "https://github.com/darnleyweekes-spec/Handy",
+      "commit": "b50b52a8e398b8f07a498e18d9a19e3ad8bdf57e",
+      "source_path": "integrations/vendor/Handy",
+      "role": "voice-input",
+      "status": "source_ready",
+      "blockers": [
+        "Desktop audio, microphone permission, Rust and Tauri runtime unavailable"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "librechat",
+      "name": "LibreChat",
+      "repository": "https://github.com/darnleyweekes-spec/LibreChat",
+      "commit": "45cc53c40b47645b887c3bb996168e06aaa83f4c",
+      "source_path": "integrations/vendor/LibreChat",
+      "role": "chat-interface",
+      "status": "source_ready",
+      "blockers": [
+        "MongoDB and model backend not configured"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "recordly",
+      "name": "Recordly",
+      "repository": "https://github.com/darnleyweekes-spec/Recordly",
+      "commit": "4fda917aff39729eb22e72bbb881c6b7123d4033",
+      "source_path": "integrations/vendor/Recordly",
+      "role": "screen-recording",
+      "status": "source_ready",
+      "blockers": [
+        "Desktop display, capture permissions and native Electron helpers unavailable"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "anything-llm",
+      "name": "anything-llm",
+      "repository": "https://github.com/darnleyweekes-spec/anything-llm",
+      "commit": "895ca91b4f0c5370b3a70e1d3d269bbbe429cdc4",
+      "source_path": "integrations/vendor/anything-llm",
+      "role": "document-knowledge",
+      "status": "source_ready",
+      "blockers": [
+        "Docker or desktop runtime not configured; document/model workspace not configured"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "browser-use",
+      "name": "browser-use",
+      "repository": "https://github.com/darnleyweekes-spec/browser-use",
+      "commit": "a3e3cc5dd11dd219884532fd37d67775cd66c74d",
+      "source_path": "integrations/vendor/browser-use",
+      "role": "browser-automation",
+      "status": "library_verified",
+      "blockers": [
+        "Chromium download failed; model endpoint not configured"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "chatterbox",
+      "name": "chatterbox",
+      "repository": "https://github.com/darnleyweekes-spec/chatterbox",
+      "commit": "5de7a54aa4e5e2baadb0182dde554908b48b85c2",
+      "source_path": "integrations/vendor/chatterbox",
+      "role": "voice-output",
+      "status": "library_verified",
+      "blockers": [
+        "No model weights installed; synthesis not tested"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "crawl4ai",
+      "name": "crawl4ai",
+      "repository": "https://github.com/darnleyweekes-spec/crawl4ai",
+      "commit": "7e801521428ee12509994d39151006f64055ebe3",
+      "source_path": "integrations/vendor/crawl4ai",
+      "role": "web-research",
+      "status": "library_verified",
+      "blockers": [
+        "Chromium download failed; browser extraction not tested"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "dify",
+      "name": "dify",
+      "repository": "https://github.com/darnleyweekes-spec/dify",
+      "commit": "1369a2cdfc12c6fdbf263c8c4abd23eff202e435",
+      "source_path": "integrations/vendor/dify",
+      "role": "app-workflows",
+      "status": "source_ready",
+      "blockers": [
+        "Docker unavailable; workflow and model endpoints not configured"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "langflow",
+      "name": "langflow",
+      "repository": "https://github.com/darnleyweekes-spec/langflow",
+      "commit": "3325c4642c489bfc2e2f4c9f3c63a32961f9581f",
+      "source_path": "integrations/vendor/langflow",
+      "role": "workflow-design",
+      "status": "library_verified",
+      "blockers": [
+        "Flows and model endpoint not configured"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "maxun",
+      "name": "maxun",
+      "repository": "https://github.com/darnleyweekes-spec/maxun",
+      "commit": "e174b288c8ceafe39de410c057ab2a694fd263b5",
+      "source_path": "integrations/vendor/maxun",
+      "role": "web-data",
+      "status": "source_ready",
+      "blockers": [
+        "Docker and database services unavailable"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "python-training",
+      "name": "python-training",
+      "repository": "https://github.com/darnleyweekes-spec/python-training",
+      "commit": "0c536090508181dcfcd64fbcfbfa507cda2db93c",
+      "source_path": "integrations/vendor/python-training",
+      "role": "python-learning",
+      "status": "library_verified",
+      "blockers": [
+        "External financial-data exercises require an API key"
+      ],
+      "execution_enabled": false
+    },
+    {
+      "id": "supabase",
+      "name": "supabase",
+      "repository": "https://github.com/darnleyweekes-spec/supabase",
+      "commit": "b97ad08be568ac68a0aadbdbb7775173d858c7b1",
+      "source_path": "integrations/vendor/supabase",
+      "role": "database-auth-storage",
+      "status": "source_ready",
+      "blockers": [
+        "Docker unavailable; database credentials and deployment not configured"
+      ],
+      "execution_enabled": false
+    }
+  ]
+}

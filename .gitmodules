@@ -1,3 +1,42 @@
 [submodule "integrations/openhands-canvas"]
 	path = integrations/openhands-canvas
 	url = https://github.com/darnleyweekes-spec/OpenHands.git
+[submodule "integrations/vendor/ComfyUI"]
+	path = integrations/vendor/ComfyUI
+	url = https://github.com/darnleyweekes-spec/ComfyUI.git
+[submodule "integrations/vendor/Handy"]
+	path = integrations/vendor/Handy
+	url = https://github.com/darnleyweekes-spec/Handy.git
+[submodule "integrations/vendor/LibreChat"]
+	path = integrations/vendor/LibreChat
+	url = https://github.com/darnleyweekes-spec/LibreChat.git
+[submodule "integrations/vendor/Recordly"]
+	path = integrations/vendor/Recordly
+	url = https://github.com/darnleyweekes-spec/Recordly.git
+[submodule "integrations/vendor/anything-llm"]
+	path = integrations/vendor/anything-llm
+	url = https://github.com/darnleyweekes-spec/anything-llm.git
+[submodule "integrations/vendor/browser-use"]
+	path = integrations/vendor/browser-use
+	url = https://github.com/darnleyweekes-spec/browser-use.git
+[submodule "integrations/vendor/chatterbox"]
+	path = integrations/vendor/chatterbox
+	url = https://github.com/darnleyweekes-spec/chatterbox.git
+[submodule "integrations/vendor/crawl4ai"]
+	path = integrations/vendor/crawl4ai
+	url = https://github.com/darnleyweekes-spec/crawl4ai.git
+[submodule "integrations/vendor/dify"]
+	path = integrations/vendor/dify
+	url = https://github.com/darnleyweekes-spec/dify.git
+[submodule "integrations/vendor/langflow"]
+	path = integrations/vendor/langflow
+	url = https://github.com/darnleyweekes-spec/langflow.git
+[submodule "integrations/vendor/maxun"]
+	path = integrations/vendor/maxun
+	url = https://github.com/darnleyweekes-spec/maxun.git
+[submodule "integrations/vendor/python-training"]
+	path = integrations/vendor/python-training
+	url = https://github.com/darnleyweekes-spec/python-training.git
+[submodule "integrations/vendor/supabase"]
+	path = integrations/vendor/supabase
+	url = https://github.com/darnleyweekes-spec/supabase.git
