@@ -1,0 +1,3 @@
+[submodule "integrations/openhands-canvas"]
+	path = integrations/openhands-canvas
+	url = https://github.com/darnleyweekes-spec/OpenHands.git
