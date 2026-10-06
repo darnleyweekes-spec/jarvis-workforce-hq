@@ -197,6 +197,20 @@
         "Live design workspace and MCP plugin not connected"
       ],
       "execution_enabled": false
+    },
+    {
+      "id": "listmonk",
+      "name": "Listmonk",
+      "repository": "https://github.com/darnleyweekes-spec/listmonk",
+      "commit": "0808fe5a83e9abb5f3f738a4dd6ead1c3ed2afe1",
+      "source_path": "integrations/vendor/listmonk",
+      "role": "newsletter-and-campaign-preparation",
+      "status": "source_ready",
+      "blockers": [
+        "Go 1.26.1 compiler and PostgreSQL unavailable",
+        "SMTP, persistent deployment and approval-controlled send adapter not configured"
+      ],
+      "execution_enabled": false
     }
   ]
 }

@@ -7,11 +7,12 @@ from capability_registry import load_capabilities, prepare_capability
 class RegistryTests(unittest.TestCase):
     def test_all_requested_sources_are_pinned(self):
         entries = load_capabilities()
-        self.assertEqual(len(entries), 15)
+        self.assertEqual(len(entries), 16)
         self.assertIn('python-training', entries)
         self.assertIn('recordly', entries)
         self.assertIn('agentic-inbox', entries)
         self.assertIn('penpot', entries)
+        self.assertIn('listmonk', entries)
         self.assertTrue(all(len(e['commit']) == 40 for e in entries.values()))
 
     def test_scoped_handoff_cannot_execute_or_complete(self):
@@ -38,3 +39,14 @@ class RegistryTests(unittest.TestCase):
             self.assertFalse(packet['execution_authorized'])
             self.assertFalse(packet['capability']['execution_enabled'])
             self.assertEqual(store.get('inbox'), before)
+
+    def test_listmonk_handoff_does_not_send(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = SQLiteMissionStore(Path(folder) / 'ledger.sqlite3')
+            store.create(MissionRequest('Prepare newsletter', ['draft ready'],
+                                        allowed_tools=['listmonk.prepare'], mission_id='newsletter'))
+            before = store.get('newsletter')
+            packet = prepare_capability(store, 'newsletter', 'listmonk')
+            self.assertFalse(packet['execution_authorized'])
+            self.assertFalse(packet['capability']['execution_enabled'])
+            self.assertEqual(store.get('newsletter'), before)

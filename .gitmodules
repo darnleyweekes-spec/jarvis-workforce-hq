@@ -48,3 +48,7 @@
 [submodule "integrations/vendor/penpot"]
 	path = integrations/vendor/penpot
 	url = https://github.com/darnleyweekes-spec/penpot.git
+
+[submodule "integrations/vendor/listmonk"]
+	path = integrations/vendor/listmonk
+	url = https://github.com/darnleyweekes-spec/listmonk.git

@@ -73,5 +73,10 @@
     "name": "penpot",
     "sha": "9d08e26cb3d0ed003a5cf7df37adc778019bf75e",
     "path": "integrations/vendor/penpot"
+  },
+  {
+    "name": "listmonk",
+    "sha": "0808fe5a83e9abb5f3f738a4dd6ead1c3ed2afe1",
+    "path": "integrations/vendor/listmonk"
   }
 ]
