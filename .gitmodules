@@ -40,3 +40,7 @@
 [submodule "integrations/vendor/supabase"]
 	path = integrations/vendor/supabase
 	url = https://github.com/darnleyweekes-spec/supabase.git
+
+[submodule "integrations/vendor/agentic-inbox"]
+	path = integrations/vendor/agentic-inbox
+	url = https://github.com/darnleyweekes-spec/agentic-inbox.git

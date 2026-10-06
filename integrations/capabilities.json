@@ -169,6 +169,20 @@
         "Docker unavailable; database credentials and deployment not configured"
       ],
       "execution_enabled": false
+    },
+    {
+      "id": "agentic-inbox",
+      "name": "Agentic Inbox",
+      "repository": "https://github.com/darnleyweekes-spec/agentic-inbox",
+      "commit": "48039bb6785af34e592c2966f87cde2b255c4c80",
+      "source_path": "integrations/vendor/agentic-inbox",
+      "role": "email-research-and-draft-handoff",
+      "status": "library_verified",
+      "blockers": [
+        "Cloudflare Access, R2, Workers AI, Email Routing and Email Service not configured",
+        "MCP send tools lack enforced human approval; no live mailbox connection"
+      ],
+      "execution_enabled": false
     }
   ]
 }

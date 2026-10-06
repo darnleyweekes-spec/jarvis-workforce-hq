@@ -63,5 +63,10 @@
     "name": "supabase",
     "sha": "b97ad08be568ac68a0aadbdbb7775173d858c7b1",
     "path": "integrations/vendor/supabase"
+  },
+  {
+    "name": "agentic-inbox",
+    "sha": "48039bb6785af34e592c2966f87cde2b255c4c80",
+    "path": "integrations/vendor/agentic-inbox"
   }
 ]
