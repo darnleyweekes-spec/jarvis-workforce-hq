@@ -1,0 +1,26 @@
+# ALPHA private operator API. This is not the public Prime24AI site.
+# Paid instance + persistent disk required; review charges before creating.
+services:
+  - type: web
+    name: prime24ai-alpha-operator
+    runtime: docker
+    region: oregon
+    plan: 0.5c-512mb
+    dockerfilePath: ./alpha-runtime/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    numInstances: 1
+    autoDeployTrigger: off
+    envVars:
+      - key: ALPHA_BIND
+        value: 0.0.0.0
+      - key: ALPHA_PORT
+        value: "10000"
+      - key: ALPHA_DB_PATH
+        value: /data/alpha.sqlite3
+      - key: ALPHA_API_TOKEN
+        sync: false
+    disk:
+      name: alpha-mission-ledger
+      mountPath: /data
+      sizeGB: 1
