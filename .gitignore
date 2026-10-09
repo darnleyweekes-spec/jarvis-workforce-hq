@@ -2,3 +2,9 @@
 __pycache__/
 *.py[cod]
 *.sqlite3
+
+# Local API credentials and runtime state
+alpha-runtime/.env
+alpha-runtime/.env.*
+!alpha-runtime/.env.example
+alpha-runtime/data/
