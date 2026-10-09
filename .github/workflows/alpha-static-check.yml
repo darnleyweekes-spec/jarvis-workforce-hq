@@ -37,6 +37,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check JavaScript syntax
         run: node --check script.js
+      - name: Check Compute Engine deployment script syntax
+        run: bash -n alpha-runtime/deploy_gce.sh
       - name: Test ALPHA runtime core
         run: python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
       - name: Build ALPHA deployable container
