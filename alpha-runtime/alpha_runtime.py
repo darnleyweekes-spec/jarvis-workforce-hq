@@ -30,6 +30,10 @@ class VerificationFailed(MissionError):
     pass
 
 
+class ContextPermissionDenied(MissionError):
+    pass
+
+
 @dataclass(frozen=True)
 class Evidence:
     evidence_id: str
@@ -39,6 +43,11 @@ class Evidence:
     classification: str  # fact | inference | hypothesis | user_input
     freshness_seconds: int | None = None
     expires_at: str | None = None
+    owner_scope: str | None = None
+    project_scope: str | None = None
+    access_tags: tuple[str, ...] = ()
+    validity_status: str = "active"  # active | invalid
+    depends_on: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -72,6 +81,9 @@ class MissionRequest:
     allowed_tools: list[str] = field(default_factory=list)
     prohibited_actions: list[str] = field(default_factory=list)
     approval_required: bool = True
+    owner_scope: str | None = None
+    project_scope: str | None = None
+    access_tags: list[str] = field(default_factory=list)
     mission_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
 
@@ -303,6 +315,8 @@ class SQLiteMissionStore:
     def add_evidence(self, mission_id: str, item: Evidence) -> None:
         if item.classification not in {"fact", "inference", "hypothesis", "user_input"}:
             raise ValueError("unsupported evidence classification")
+        if item.validity_status not in {"active", "invalid"}:
+            raise ValueError("unsupported evidence validity status")
         with self._connect() as db:
             self._require(db, mission_id)
             db.execute("INSERT INTO evidence VALUES(?,?,?,?)", (
@@ -310,7 +324,105 @@ class SQLiteMissionStore:
             self._event(db, mission_id, "EVIDENCE_ADDED", {
                 "evidence_id": item.evidence_id, "source": item.source,
                 "retrieved_at": item.retrieved_at, "classification": item.classification,
+                "owner_scope": item.owner_scope, "project_scope": item.project_scope,
+                "access_tags": list(item.access_tags), "validity_status": item.validity_status,
+                "depends_on": list(item.depends_on),
             })
+
+    def record_context_decision(
+        self,
+        mission_id: str,
+        evidence_id: str,
+        decision: str,
+        reason: str,
+    ) -> None:
+        if decision not in {"ALLOW", "DENY", "UNRESOLVED"}:
+            raise ValueError("unsupported context permission decision")
+        with self._connect() as db:
+            self._require(db, mission_id)
+            self._event(db, mission_id, "CONTEXT_PERMISSION_DECISION", {
+                "evidence_id": evidence_id,
+                "decision": decision,
+                "reason": reason,
+            })
+
+    def invalidate_evidence(
+        self,
+        mission_id: str,
+        evidence_id: str,
+        reason: str,
+    ) -> tuple[str, ...]:
+        """Invalidate evidence and transitively invalidate dependent evidence."""
+        if not reason.strip():
+            raise ValueError("invalidation reason is required")
+        with self._connect() as db:
+            self._require(db, mission_id)
+            rows = list(db.execute(
+                "SELECT evidence_id,evidence_json FROM evidence WHERE mission_id=?",
+                (mission_id,),
+            ))
+            by_id = {row["evidence_id"]: json.loads(row["evidence_json"]) for row in rows}
+            if evidence_id not in by_id:
+                raise MissionError("evidence not found")
+            invalidated: list[str] = []
+            queue = [evidence_id]
+            while queue:
+                current = queue.pop(0)
+                if current in invalidated:
+                    continue
+                invalidated.append(current)
+                for candidate_id, payload in by_id.items():
+                    if current in payload.get("depends_on", []) and candidate_id not in invalidated:
+                        queue.append(candidate_id)
+            for current in invalidated:
+                payload = dict(by_id[current])
+                payload["validity_status"] = "invalid"
+                db.execute(
+                    "UPDATE evidence SET evidence_json=? WHERE mission_id=? AND evidence_id=?",
+                    (json.dumps(payload, sort_keys=True), mission_id, current),
+                )
+                self._event(db, mission_id, "EVIDENCE_INVALIDATED", {
+                    "evidence_id": current,
+                    "root_evidence_id": evidence_id,
+                    "reason": reason,
+                })
+
+            state_row = db.execute(
+                "SELECT state_json FROM mission_states WHERE mission_id=?",
+                (mission_id,),
+            ).fetchone()
+            if state_row:
+                raw_state = json.loads(state_row["state_json"])
+                active_claims = {
+                    payload.get("claim")
+                    for item_id, payload in by_id.items()
+                    if item_id not in invalidated
+                    and payload.get("validity_status", "active") == "active"
+                    and payload.get("classification") in {"fact", "user_input"}
+                }
+                invalid_claims = {
+                    by_id[item_id].get("claim")
+                    for item_id in invalidated
+                    if by_id[item_id].get("classification") in {"fact", "user_input"}
+                }
+                known_facts = tuple(
+                    fact for fact in raw_state.get("known_facts", [])
+                    if fact not in invalid_claims or fact in active_claims
+                )
+                state = MissionState(
+                    known_facts=known_facts,
+                    unresolved_requirements=tuple(raw_state.get("unresolved_requirements", [])),
+                    completed_requirements=tuple(raw_state.get("completed_requirements", [])),
+                    assumptions=tuple(raw_state.get("assumptions", [])),
+                    blocking_conditions=tuple(dict.fromkeys([
+                        *raw_state.get("blocking_conditions", []),
+                        "evidence_invalidated",
+                    ])),
+                    last_verified_progress=raw_state.get("last_verified_progress"),
+                    revision=int(raw_state.get("revision", 0)) + 1,
+                )
+                self._set_state_in_db(db, mission_id, state)
+            return tuple(invalidated)
 
     def get_mission_state(self, mission_id: str) -> MissionState:
         with self._connect() as db:
@@ -370,6 +482,8 @@ class SQLiteMissionStore:
             for item in result.evidence:
                 if item.classification not in {"fact", "inference", "hypothesis", "user_input"}:
                     raise ValueError("unsupported evidence classification")
+                if item.validity_status not in {"active", "invalid"}:
+                    raise ValueError("unsupported evidence validity status")
                 db.execute("INSERT OR IGNORE INTO evidence VALUES(?,?,?,?)", (
                     mission_id, item.evidence_id, json.dumps(asdict(item), sort_keys=True), time.time()))
             if result.mission_state is not None:
@@ -537,7 +651,9 @@ class ContractVerifier:
         errors_ok = not result.errors
 
         available_evidence = {
-            item.evidence_id for item in (*task.evidence, *result.evidence)
+            item.evidence_id
+            for item in (*task.evidence, *result.evidence)
+            if item.validity_status == "active"
         }
         contracts = {contract.criterion: contract for contract in result.claim_evidence}
         invalid_contracts: list[dict[str, Any]] = []
@@ -634,6 +750,29 @@ class AlphaRuntime:
         self.verifier = verifier or ContractVerifier()
 
     @staticmethod
+    def context_permission(
+        request: MissionRequest,
+        item: Evidence,
+    ) -> tuple[str, str]:
+        if item.validity_status != "active":
+            return "DENY", "evidence is not active"
+        if item.owner_scope is not None:
+            if request.owner_scope is None:
+                return "UNRESOLVED", "mission owner scope is missing"
+            if item.owner_scope != request.owner_scope:
+                return "DENY", "owner scope mismatch"
+        if item.project_scope is not None:
+            if request.project_scope is None:
+                return "UNRESOLVED", "mission project scope is missing"
+            if item.project_scope != request.project_scope:
+                return "DENY", "project scope mismatch"
+        required_tags = set(item.access_tags)
+        supplied_tags = set(request.access_tags)
+        if required_tags and not required_tags.issubset(supplied_tags):
+            return "DENY", "required access tags are missing"
+        return "ALLOW", "scope and access policy satisfied"
+
+    @staticmethod
     def _derive_state(
         prior: MissionState,
         request: MissionRequest,
@@ -646,7 +785,7 @@ class AlphaRuntime:
             *(
                 e.claim
                 for e in combined
-                if e.classification in {"fact", "user_input"}
+                if e.classification in {"fact", "user_input"} and e.validity_status == "active"
             ),
         ]))
         assumptions = tuple(dict.fromkeys([
@@ -654,7 +793,7 @@ class AlphaRuntime:
             *(
                 e.claim
                 for e in combined
-                if e.classification in {"inference", "hypothesis"}
+                if e.classification in {"inference", "hypothesis"} and e.validity_status == "active"
             ),
         ]))
         completed = tuple(dict.fromkeys(result.completed_criteria))
@@ -682,8 +821,33 @@ class AlphaRuntime:
         if role not in self.specialists:
             raise ValueError(f"no specialist registered for role {role}")
         self.store.create(request)
+        allowed_evidence: list[Evidence] = []
+        blocked_context: list[dict[str, str]] = []
         for item in evidence:
-            self.store.add_evidence(request.mission_id, item)
+            decision, reason = self.context_permission(request, item)
+            self.store.record_context_decision(
+                request.mission_id, item.evidence_id, decision, reason
+            )
+            if decision == "ALLOW":
+                self.store.add_evidence(request.mission_id, item)
+                allowed_evidence.append(item)
+            else:
+                blocked_context.append({
+                    "evidence_id": item.evidence_id,
+                    "decision": decision,
+                    "reason": reason,
+                })
+        if blocked_context:
+            self.store.transition(
+                request.mission_id,
+                "INTAKE",
+                "FAILED",
+                "CONTEXT_PERMISSION_BLOCKED",
+                {"blocked": blocked_context},
+            )
+            raise ContextPermissionDenied(
+                "mission context contains denied or unresolved evidence"
+            )
         self.store.transition(
             request.mission_id,
             "INTAKE",
@@ -707,7 +871,7 @@ class AlphaRuntime:
             constraints=tuple(request.constraints),
             allowed_tools=tuple(request.allowed_tools),
             prohibited_actions=tuple(request.prohibited_actions),
-            evidence=tuple(evidence),
+            evidence=tuple(allowed_evidence),
             mission_state=prior_state,
             max_attempts=2,
         )
@@ -731,7 +895,7 @@ class AlphaRuntime:
                 mission_state=self._derive_state(
                     prior_state,
                     request,
-                    evidence,
+                    allowed_evidence,
                     result,
                 ),
             )
