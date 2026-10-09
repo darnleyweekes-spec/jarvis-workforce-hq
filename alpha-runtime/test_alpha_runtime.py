@@ -5,7 +5,8 @@ from pathlib import Path
 from alpha_runtime import (
     AlphaRuntime, ApprovalRequired, ClaimEvidenceContract, ContextPermissionDenied,
     ContractVerifier, Evidence, MissionRequest, MissionState, ProposedAction,
-    SpecialistResult, SQLiteMissionStore, VerificationFailed,
+    SpecialistResult, SQLiteMissionStore, ToolTrajectoryPolicy, TrajectoryBlocked,
+    VerificationFailed,
 )
 
 
@@ -293,6 +294,123 @@ class RuntimeTests(unittest.TestCase):
             if event["event_type"] == "EVIDENCE_INVALIDATED"
         ]
         self.assertEqual(len(invalidation_events), 2)
+
+
+    def test_instrumented_tool_calls_are_audited_without_leaking_arguments(self):
+        class Reader(DemoSpecialist):
+            def run(self, task):
+                self.received = task.invoke_tool(
+                    "draft_builder", "sensitive customer input", lambda: "ok"
+                )
+                return super().run(task)
+
+        store = SQLiteMissionStore(self.db)
+        specialist = Reader()
+        runtime = AlphaRuntime(store, {"SCRIBE": specialist})
+        state = runtime.submit(self.request(), "SCRIBE")
+        self.assertEqual(state["status"], "VERIFIED")
+        self.assertEqual(specialist.received.allowed_tools, ("draft_builder",))
+        tool_events = [
+            event for event in store.events("mission-1")
+            if event["event_type"].startswith("TOOL_CALL_")
+        ]
+        self.assertEqual(
+            [e["event_type"] for e in tool_events],
+            ["TOOL_CALL_STARTED", "TOOL_CALL_FINISHED"],
+        )
+        self.assertNotIn("sensitive customer input", str(tool_events))
+        self.assertTrue(store.verify_event_chain("mission-1"))
+
+    def test_repeated_operation_is_blocked_before_dispatch(self):
+        calls = []
+        class Looper(DemoSpecialist):
+            def run(self, task):
+                for _ in range(4):
+                    task.invoke_tool(
+                        "draft_builder", "same-request", lambda: calls.append(1)
+                    )
+                return super().run(task)
+
+        store = SQLiteMissionStore(self.db)
+        runtime = AlphaRuntime(
+            store, {"SCRIBE": Looper()},
+            trajectory_policy=ToolTrajectoryPolicy(max_repeats_per_operation=2),
+        )
+        with self.assertRaises(TrajectoryBlocked):
+            runtime.submit(self.request(), "SCRIBE")
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(store.get("mission-1")["status"], "FAILED")
+        self.assertTrue(store.verify_event_chain("mission-1"))
+        self.assertIn(
+            "TRAJECTORY_BLOCKED",
+            [e["event_type"] for e in store.events("mission-1")],
+        )
+
+    def test_disallowed_and_consequential_calls_never_dispatch(self):
+        for kind in ("disallowed", "consequential"):
+            with self.subTest(kind=kind):
+                path = Path(self.temp.name) / (kind + ".sqlite")
+                calls = []
+                class Unsafe(DemoSpecialist):
+                    def run(self, task):
+                        task.invoke_tool(
+                            "unknown" if kind == "disallowed" else "draft_builder",
+                            "operation", lambda: calls.append(1),
+                            consequential=(kind == "consequential"),
+                        )
+                        return super().run(task)
+                runtime = AlphaRuntime(
+                    SQLiteMissionStore(path), {"SCRIBE": Unsafe()}
+                )
+                with self.assertRaises(TrajectoryBlocked):
+                    runtime.submit(self.request(), "SCRIBE")
+                self.assertEqual(calls, [])
+
+    def test_swallowed_trajectory_block_still_fails_mission(self):
+        class Swallow(DemoSpecialist):
+            def run(self, task):
+                try:
+                    task.invoke_tool("unknown", "operation", lambda: None)
+                except TrajectoryBlocked:
+                    pass
+                return super().run(task)
+        store = SQLiteMissionStore(self.db)
+        with self.assertRaises(TrajectoryBlocked):
+            AlphaRuntime(store, {"SCRIBE": Swallow()}).submit(
+                self.request(), "SCRIBE"
+            )
+        self.assertEqual(store.get("mission-1")["status"], "FAILED")
+        self.assertIsNone(store.get("mission-1")["verification"])
+
+    def test_failure_streak_and_budget_limits(self):
+        class CatchingReader(DemoSpecialist):
+            def run(self, task):
+                for i in range(3):
+                    try:
+                        task.invoke_tool(
+                            "draft_builder", f"failed-{i}",
+                            lambda: (_ for _ in ()).throw(ValueError("secret")),
+                        )
+                    except ValueError:
+                        pass
+                task.invoke_tool("draft_builder", "fourth", lambda: "should not run")
+                return super().run(task)
+        store = SQLiteMissionStore(self.db)
+        runtime = AlphaRuntime(
+            store, {"SCRIBE": CatchingReader()},
+            trajectory_policy=ToolTrajectoryPolicy(
+                max_failures_per_tool=2, max_total_calls=10,
+            ),
+        )
+        with self.assertRaises(TrajectoryBlocked):
+            runtime.submit(self.request(), "SCRIBE")
+        reasons = [
+            e["payload"].get("reason")
+            for e in store.events("mission-1")
+            if e["event_type"] == "TOOL_CALL_BLOCKED"
+        ]
+        self.assertIn("repeated_tool_failures", reasons)
+        self.assertNotIn("secret", str(store.events("mission-1")))
 
 
 if __name__ == "__main__":
