@@ -413,5 +413,51 @@ class RuntimeTests(unittest.TestCase):
         self.assertNotIn("secret", str(store.events("mission-1")))
 
 
+    def test_invalidation_revokes_pending_action_eligibility(self):
+        action = ProposedAction("send", "email.send", {"body": "draft"})
+        evidence = Evidence(
+            "ev-1", "Customer is impacted", "monitor",
+            "2026-10-09T10:00:00Z", "fact",
+        )
+        store = SQLiteMissionStore(self.db)
+        runtime = AlphaRuntime(store, {"SCRIBE": DemoSpecialist(action)})
+        runtime.submit(self.request(), "SCRIBE", [evidence])
+        self.assertEqual(store.get("mission-1")["status"], "AWAITING_APPROVAL")
+        store.approve("mission-1", action, "reviewer")
+        store.invalidate_evidence("mission-1", "ev-1", "source retracted")
+        self.assertEqual(store.get("mission-1")["status"], "VERIFICATION_FAILED")
+        called = []
+        with self.assertRaises(ApprovalRequired):
+            store.execute_once(
+                "mission-1", action, lambda a, key: called.append(key)
+            )
+        with self.assertRaises(ApprovalRequired):
+            runtime.approve_and_execute(
+                "mission-1", action, "reviewer", lambda a, key: called.append(key)
+            )
+        self.assertEqual(called, [])
+        self.assertTrue(store.verify_event_chain("mission-1"))
+
+    def test_invalidation_of_completed_action_requires_reconciliation(self):
+        action = ProposedAction("send", "email.send", {"body": "draft"})
+        evidence = Evidence(
+            "ev-1", "Customer is impacted", "monitor",
+            "2026-10-09T10:00:00Z", "fact",
+        )
+        store = SQLiteMissionStore(self.db)
+        runtime = AlphaRuntime(store, {"SCRIBE": DemoSpecialist(action)})
+        runtime.submit(self.request(), "SCRIBE", [evidence])
+        runtime.approve_and_execute(
+            "mission-1", action, "reviewer",
+            lambda a, key: {"status": "sent"},
+        )
+        store.invalidate_evidence("mission-1", "ev-1", "source retracted")
+        self.assertEqual(store.get("mission-1")["status"], "ACTION_COMPLETED")
+        self.assertIn(
+            "POST_ACTION_EVIDENCE_INVALIDATED",
+            [e["event_type"] for e in store.events("mission-1")],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
