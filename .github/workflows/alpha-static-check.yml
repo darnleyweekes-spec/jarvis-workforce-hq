@@ -10,6 +10,7 @@ on:
       - README.md
       - ALPHA_ARCHITECTURE.md
       - alpha-runtime/**
+      - .dockerignore
       - project-kit/**
       - brand/project-brand-registry.json
       - .github/workflows/alpha-static-check.yml
@@ -38,6 +39,19 @@ jobs:
         run: node --check script.js
       - name: Test ALPHA runtime core
         run: python3 -m unittest discover -s alpha-runtime -p 'test_*.py' -v
+      - name: Build ALPHA deployable container
+        run: docker build -f alpha-runtime/Dockerfile -t alpha-api:ci .
+      - name: Smoke test container startup and authentication
+        run: |
+          docker run -d --name alpha-api-ci -e ALPHA_API_TOKEN=ci-token-with-more-than-thirty-two-characters -p 127.0.0.1:18080:8080 alpha-api:ci
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18080/healthz >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:18080/healthz
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/readyz)" = "401"
+          curl -fsS -H "Authorization: Bearer ci-token-with-more-than-thirty-two-characters" http://127.0.0.1:18080/readyz
+          docker stop alpha-api-ci
       - name: Check project contracts and new-idea gate
         run: |
           python3 project-kit/project_contract.py check project-kit/projects.json
