@@ -5,7 +5,8 @@ from pathlib import Path
 
 from alpha_runtime import (
     AlphaRuntime, ClaimEvidenceContract, Evidence, MissionRequest, MissionState,
-    ProposedAction, SpecialistResult, SQLiteMissionStore, VerificationFailed,
+    ProposedAction, SpecialistResult, SQLiteMissionStore, ToolTrajectoryPolicy,
+    TrajectoryBlocked, VerificationFailed,
 )
 from evaluation_harness import AlphaEvaluationHarness, ReliabilityGate
 
@@ -220,6 +221,41 @@ class EvaluationHarnessTests(unittest.TestCase):
         self.assertFalse(report.repeatable)
         self.assertFalse(report.passed)
         self.assertIn("non_repeatable_result", report.failure_reasons)
+
+
+    def test_evaluation_records_tool_calls_and_trajectory_block(self):
+        class RepeatingReader(SuccessSpecialist):
+            def run(self, task):
+                for _ in range(3):
+                    task.invoke_tool("draft_builder", "repeat", lambda: "ok")
+                return super().run(task)
+        runtime = AlphaRuntime(
+            self.store, {"SCRIBE": RepeatingReader()},
+            trajectory_policy=ToolTrajectoryPolicy(max_repeats_per_operation=2),
+        )
+        with self.assertRaises(TrajectoryBlocked):
+            runtime.submit(self.request("blocked-1"), "SCRIBE")
+        evaluation = self.harness.evaluate("blocked-1")
+        self.assertEqual(evaluation.tool_calls_recorded, 2)
+        self.assertEqual(evaluation.tool_errors_recorded, 0)
+        self.assertTrue(evaluation.trajectory_blocked)
+        self.assertFalse(evaluation.mission_success)
+        self.assertIn("trajectory_blocked", evaluation.failure_labels)
+
+    def test_invalidated_evidence_cannot_score_as_success(self):
+        evidence = Evidence(
+            "ev-1", "An incident exists", "monitor",
+            "2026-10-09T10:00:00Z", "fact",
+        )
+        AlphaRuntime(self.store, {"SCRIBE": SuccessSpecialist()}).submit(
+            self.request("invalidated-1"), "SCRIBE", [evidence]
+        )
+        self.store.invalidate_evidence("invalidated-1", "ev-1", "source corrected")
+        evaluation = self.harness.evaluate("invalidated-1")
+        self.assertFalse(evaluation.context_provenance_passed)
+        self.assertFalse(evaluation.mission_success)
+        self.assertFalse(evaluation.terminal_success)
+        self.assertIn("context_provenance", evaluation.failure_labels)
 
 
 if __name__ == "__main__":
