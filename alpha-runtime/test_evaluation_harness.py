@@ -201,6 +201,14 @@ class EvaluationHarnessTests(unittest.TestCase):
                 return SpecialistResult(
                     f"done-{self.calls}",
                     completed_criteria=task.success_criteria,
+                    claim_evidence=tuple(
+                        ClaimEvidenceContract(
+                            criterion=criterion,
+                            status="verified",
+                            verification_method="artifact:specialist_result",
+                        )
+                        for criterion in task.success_criteria
+                    ),
                 )
 
         specialist = VariableSpecialist()
