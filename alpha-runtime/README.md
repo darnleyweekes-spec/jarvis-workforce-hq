@@ -123,7 +123,7 @@ Before execution, every supplied evidence item receives an auditable permission 
 - `DENY`: known scope mismatch, missing access tag, or invalid evidence; the mission fails closed.
 - `UNRESOLVED`: scoped evidence was supplied but the mission lacks enough scope information; the mission also fails closed.
 
-Calling `invalidate_evidence()` marks the source invalid, recursively invalidates dependent evidence, records append-only invalidation events, removes unsupported known facts from explicit mission state, and adds an `evidence_invalidated` blocker for re-verification.
+Calling `invalidate_evidence()` marks the source invalid, recursively invalidates dependent evidence, records append-only invalidation events, removes unsupported known facts from explicit mission state, and adds an `evidence_invalidated` blocker for re-verification. If the mission is executing, verified, or awaiting approval, its status becomes `VERIFICATION_FAILED`, preventing new external actions even when an approval was previously recorded. If the action was already completed, the mission records a post-action invalidation event requiring manual reconciliation instead of pretending the external effect was undone.
 
 ## Trust-layer repeatability
 
@@ -146,6 +146,7 @@ The report requires four independent conditions: verification/grading exists and
 - False-success rate and false-success attempts blocked by verification.
 - Mission-state stall rate.
 - Trajectory horizon/event count.
+- Instrumented tool call count, tool-error count, and whether a trajectory guard blocked execution.
 - Hash-chain integrity.
 - Evidence/context provenance completeness.
 - Approval-required and action-completed state.
