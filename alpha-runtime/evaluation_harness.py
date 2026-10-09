@@ -92,6 +92,19 @@ class ReliabilityGate:
         return not reasons, tuple(reasons)
 
 
+@dataclass(frozen=True)
+class TrustLayerReport:
+    mission_ids: tuple[str, ...]
+    run_count: int
+    valid_grading: bool
+    traceable_work: bool
+    honest_completion: bool
+    repeatable: bool
+    passed: bool
+    result_digests: tuple[str, ...]
+    failure_reasons: tuple[str, ...]
+
+
 class AlphaEvaluationHarness:
     """Builds replayable snapshots, scores missions, and selects regression cases."""
 
@@ -247,6 +260,63 @@ class AlphaEvaluationHarness:
             failed=failed,
             score=score,
             failure_labels=tuple(labels),
+        )
+
+
+    def trust_layer(self, mission_ids: Sequence[str], min_runs: int = 2) -> TrustLayerReport:
+        """Evaluate grading, traceability, honesty, and repeatability across repeated runs."""
+        ids = tuple(dict.fromkeys(mission_ids))
+        if len(ids) < min_runs:
+            raise ValueError(f"at least {min_runs} repeated mission runs are required")
+        evaluations = [self.evaluate(mid) for mid in ids]
+        snapshots = [self.snapshot(mid) for mid in ids]
+        digests = tuple(
+            hashlib.sha256(
+                json.dumps(
+                    {
+                        "result": snap.result,
+                        "verification": snap.verification,
+                        "mission_state": snap.mission_state,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode()
+            ).hexdigest()
+            for snap in snapshots
+        )
+        valid_grading = all(
+            evaluation.verification_passed is not None
+            and evaluation.event_chain_valid
+            for evaluation in evaluations
+        )
+        traceable_work = all(
+            evaluation.context_provenance_passed
+            and evaluation.evidence_contract_passed is not False
+            for evaluation in evaluations
+        )
+        honest_completion = all(
+            not evaluation.false_success for evaluation in evaluations
+        )
+        repeatable = len(set(digests)) == 1
+        reasons: list[str] = []
+        if not valid_grading:
+            reasons.append("invalid_or_missing_grading")
+        if not traceable_work:
+            reasons.append("untraceable_work")
+        if not honest_completion:
+            reasons.append("false_success_detected")
+        if not repeatable:
+            reasons.append("non_repeatable_result")
+        return TrustLayerReport(
+            mission_ids=ids,
+            run_count=len(ids),
+            valid_grading=valid_grading,
+            traceable_work=traceable_work,
+            honest_completion=honest_completion,
+            repeatable=repeatable,
+            passed=not reasons,
+            result_digests=digests,
+            failure_reasons=tuple(reasons),
         )
 
     def regression_subset(self, mission_ids: Sequence[str], limit: int) -> list[str]:
