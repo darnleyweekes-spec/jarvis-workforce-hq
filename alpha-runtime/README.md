@@ -39,6 +39,20 @@ Endpoints: unauthenticated `GET /healthz`; authenticated `GET /readyz`, `POST /v
 
 The API rejects user-supplied tool permissions, proposed actions, and arbitrary role selection. It accepts a single, fixed metadata-audit criterion and never performs external actions. The body limit is 64 KiB; raw payloads and credentials are not logged by the HTTP handler.
 
+### Render deployment (persistent single-host alternative)
+
+The repository root contains `render.yaml`. Render can deploy the existing Docker image with a paid single-instance web service and a 1 GB persistent disk in Oregon. The blueprint disables automatic releases until an operator approves them. It does not deploy the public Prime24AI site or enable side-effectful agent tools.
+
+1. Connect the Render workspace and GitHub repository `darnleyweekes-spec/jarvis-workforce-hq`.
+2. Create a Blueprint from `render.yaml`. **Review the recurring compute and disk charges before approving service creation.**
+3. Set `ALPHA_API_TOKEN` to a newly generated secret of at least 32 characters using Render's protected environment variable prompt. Do not paste it into issues, logs, or chat.
+4. Deploy the Blueprint and verify `https://<assigned-service>.onrender.com/healthz` returns `{"status":"ok"}`. Then use an authorized client to call `/readyz` and create/read an example metadata-only mission.
+5. Confirm the persistent disk is writable by the unprivileged container user and that the mission survives a service restart. If disk permission prevents startup, fix the mount ownership in the deployment environment; do not run the container as root merely to bypass the failure.
+6. Configure restricted operator access, rate limiting, token rotation, monitoring, and tested backup/restore before storing real customer data. Render disk snapshots are not a substitute for a validated application-level backup.
+7. Do not attach a custom public-facing Prime24AI domain until access controls and live smoke tests pass.
+
+The `render.yaml` file is deployment configuration, not evidence that a Render service already exists.
+
 ### Operations and security boundary
 
 - Docker Compose binds **127.0.0.1:8080 only**. For remote access, place a properly configured **TLS reverse proxy with authentication, rate limits, and access controls** in front of it; do not expose plain HTTP or the container port directly to the internet.
