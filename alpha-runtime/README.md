@@ -1,6 +1,53 @@
 # ALPHA Runtime Core (first executable slice)
 
-This is a provider-neutral Python runtime core for supervised ALPHA missions. It is an engine/library, not yet the deployed Sites backend or a connected model/agent service.
+This is a provider-neutral Python runtime core for supervised ALPHA missions with a deployable, narrow single-host operator API. It is not the deployed Sites backend or a connected model/agent workforce.
+
+## Deploy the ALPHA single-host API
+
+The repository includes a runnable, authenticated HTTP service in `api_server.py`, a non-root Docker image, and a Docker Compose deployment. This deploys the **mission ledger, evidence metadata validation, audit events, and evaluation API**. It does **not** deploy the full ALPHA agent workforce or enable email sending, browsing, payment operations, or arbitrary tools. The exposed specialist verifies only **evidence metadata presence**, not factual truth.
+
+### Requirements and launch
+
+Install Docker Engine with the Compose plugin on a Linux host (or Docker Desktop locally). From the repository root:
+
+```bash
+cd alpha-runtime
+cp .env.example .env
+python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
+# Replace ALPHA_API_TOKEN in .env with the generated value; never commit .env
+chmod 600 .env
+docker compose up --build -d
+curl -fsS http://127.0.0.1:8080/healthz
+```
+
+Use the real token to check readiness and submit a mission:
+
+```bash
+export ALPHA_API_TOKEN="$(sed -n 's/^ALPHA_API_TOKEN=//p' .env)"
+curl -fsS -H "Authorization: Bearer $ALPHA_API_TOKEN" http://127.0.0.1:8080/readyz
+
+curl -fsS -X POST http://127.0.0.1:8080/v1/missions \
+  -H "Authorization: Bearer $ALPHA_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"mission_id":"intake-001","objective":"Check incident intake metadata","owner_scope":"prime24ai","project_scope":"agents","access_tags":["ops"],"evidence":[{"evidence_id":"e-001","claim":"Operator reports an incident","source":"operator","retrieved_at":"2026-10-09T10:00:00Z","classification":"user_input"}]}'
+
+curl -fsS -H "Authorization: Bearer $ALPHA_API_TOKEN" \
+  http://127.0.0.1:8080/v1/missions/intake-001/evaluation
+```
+
+Endpoints: unauthenticated `GET /healthz`; authenticated `GET /readyz`, `POST /v1/missions`, `GET /v1/missions/{id}`, `GET /v1/missions/{id}/events`, `GET /v1/missions/{id}/evaluation`, and `POST /v1/missions/{id}/invalidate` with `{"evidence_id":"e-001","reason":"source corrected"}`.
+
+The API rejects user-supplied tool permissions, proposed actions, and arbitrary role selection. It accepts a single, fixed metadata-audit criterion and never performs external actions. The body limit is 64 KiB; raw payloads and credentials are not logged by the HTTP handler.
+
+### Operations and security boundary
+
+- Docker Compose binds **127.0.0.1:8080 only**. For remote access, place a properly configured **TLS reverse proxy with authentication, rate limits, and access controls** in front of it; do not expose plain HTTP or the container port directly to the internet.
+- `ALPHA_API_TOKEN` is mandatory and must contain at least 32 characters. Store it in a secrets manager for a managed deployment. Rotate by updating the secret and restarting the service.
+- SQLite data persists in the Docker named volume `alpha_data`. Back it up using SQLite's backup API or a quiesced snapshot of the volume, verify restores, and secure the backups. Never store database files in the public site repository.
+- The image runs as an unprivileged user with a read-only root filesystem and dropped Linux capabilities. This is a **single-process, single-host** service; do not scale replicas against the same SQLite volume.
+- This API uses a **single shared operator token**, not per-user authentication or tenant authorization. Treat it as a private operator service only. Production multi-tenant deployment requires a separate identity layer, scope authorization, encrypted storage, observability, abuse controls, migration strategy, and a sandboxed tool runner.
+- GitHub CI runs unit tests, builds the Docker image, and tests live container startup plus unauthorized/authorized readiness.
+- To stop: `docker compose down` (keeps the volume). Do **not** use `down -v` unless intentional permanent data deletion is authorized.
 
 ## What is implemented
 
@@ -205,7 +252,7 @@ The mission request must explicitly allow `web_search`. A stable operation key d
 
 ## Current limitations (do not describe as production-ready)
 
-- No HTTP/API server, authentication, tenant isolation, hosted database, UI connection, provider/model adapter, queue, or deployment configuration is included.
+- A minimal HTTP API, shared-token authentication, and single-host Docker packaging are included. There is no per-user identity, tenant isolation, hosted database, UI connection, provider/model adapter, or queue.
 - SQLite is suitable for a single-host pilot, not concurrent multi-instance production without a deliberate storage migration and concurrency design.
 - The host must authenticate approvers, enforce authorization, isolate tenants, protect the database file, redact logs, rate-limit requests, and manage backups/encryption.
 - The core doesn't execute arbitrary tools; the host injects any executor. Approval records are not a substitute for user authentication or authorization.
