@@ -3,9 +3,9 @@ import unittest
 from pathlib import Path
 
 from alpha_runtime import (
-    AlphaRuntime, ApprovalRequired, ClaimEvidenceContract, ContractVerifier,
-    Evidence, MissionRequest, MissionState, ProposedAction, SpecialistResult,
-    SQLiteMissionStore, VerificationFailed,
+    AlphaRuntime, ApprovalRequired, ClaimEvidenceContract, ContextPermissionDenied,
+    ContractVerifier, Evidence, MissionRequest, MissionState, ProposedAction,
+    SpecialistResult, SQLiteMissionStore, VerificationFailed,
 )
 
 
@@ -191,6 +191,108 @@ class RuntimeTests(unittest.TestCase):
         self.assertFalse(progressed)
         self.assertEqual(count, 2)
         self.assertTrue(store.is_stalled("mission-1", threshold=2))
+
+
+    def test_context_permission_blocks_cross_project_evidence(self):
+        request = MissionRequest(
+            "Prepare a customer update",
+            ["draft prepared"],
+            owner_scope="prime24ai",
+            project_scope="agents",
+            access_tags=["customer_ops"],
+            mission_id="mission-1",
+        )
+        foreign = Evidence(
+            "foreign-1",
+            "Secret from another project",
+            "project-db",
+            "2026-10-09T10:00:00Z",
+            "fact",
+            owner_scope="prime24ai",
+            project_scope="mediamatch",
+            access_tags=("customer_ops",),
+        )
+        store = SQLiteMissionStore(self.db)
+        runtime = AlphaRuntime(store, {"SCRIBE": DemoSpecialist()})
+        with self.assertRaises(ContextPermissionDenied):
+            runtime.submit(request, "SCRIBE", [foreign])
+        state = store.get("mission-1")
+        self.assertEqual(state["status"], "FAILED")
+        self.assertEqual(state["evidence"], [])
+        decisions = [
+            event for event in store.events("mission-1")
+            if event["event_type"] == "CONTEXT_PERMISSION_DECISION"
+        ]
+        self.assertEqual(decisions[-1]["payload"]["decision"], "DENY")
+
+    def test_context_permission_fails_closed_when_scope_is_unresolved(self):
+        request = MissionRequest(
+            "Prepare a customer update",
+            ["draft prepared"],
+            mission_id="mission-1",
+        )
+        scoped = Evidence(
+            "scoped-1",
+            "Scoped fact",
+            "project-db",
+            "2026-10-09T10:00:00Z",
+            "fact",
+            project_scope="agents",
+        )
+        runtime = AlphaRuntime(SQLiteMissionStore(self.db), {"SCRIBE": DemoSpecialist()})
+        with self.assertRaises(ContextPermissionDenied):
+            runtime.submit(request, "SCRIBE", [scoped])
+
+    def test_provenance_invalidation_cascades_to_dependents_and_state(self):
+        request = MissionRequest(
+            "Prepare a customer update",
+            ["draft prepared"],
+            owner_scope="prime24ai",
+            project_scope="agents",
+            access_tags=["ops"],
+            mission_id="mission-1",
+        )
+        base = Evidence(
+            "ev-base",
+            "Login is degraded",
+            "monitor",
+            "2026-10-09T10:00:00Z",
+            "fact",
+            owner_scope="prime24ai",
+            project_scope="agents",
+            access_tags=("ops",),
+        )
+        derived = Evidence(
+            "ev-derived",
+            "Customer impact is elevated",
+            "analysis",
+            "2026-10-09T10:01:00Z",
+            "fact",
+            owner_scope="prime24ai",
+            project_scope="agents",
+            access_tags=("ops",),
+            depends_on=("ev-base",),
+        )
+        store = SQLiteMissionStore(self.db)
+        runtime = AlphaRuntime(store, {"SCRIBE": DemoSpecialist()})
+        runtime.submit(request, "SCRIBE", [base, derived])
+        invalidated = store.invalidate_evidence(
+            "mission-1", "ev-base", "monitoring source corrected"
+        )
+        self.assertEqual(invalidated, ("ev-base", "ev-derived"))
+        state = store.get("mission-1")
+        self.assertNotIn("Login is degraded", state["mission_state"]["known_facts"])
+        self.assertNotIn(
+            "Customer impact is elevated", state["mission_state"]["known_facts"]
+        )
+        self.assertIn(
+            "evidence_invalidated", state["mission_state"]["blocking_conditions"]
+        )
+        invalidation_events = [
+            event for event in store.events("mission-1")
+            if event["event_type"] == "EVIDENCE_INVALIDATED"
+        ]
+        self.assertEqual(len(invalidation_events), 2)
 
 
 if __name__ == "__main__":
