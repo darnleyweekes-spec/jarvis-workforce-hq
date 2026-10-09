@@ -393,7 +393,7 @@ class SQLiteMissionStore:
         if not reason.strip():
             raise ValueError("invalidation reason is required")
         with self._connect() as db:
-            self._require(db, mission_id)
+            mission_row = self._require(db, mission_id)
             rows = list(db.execute(
                 "SELECT evidence_id,evidence_json FROM evidence WHERE mission_id=?",
                 (mission_id,),
@@ -459,6 +459,22 @@ class SQLiteMissionStore:
                     revision=int(raw_state.get("revision", 0)) + 1,
                 )
                 self._set_state_in_db(db, mission_id, state)
+            if mission_row["status"] in {
+                "VERIFIED", "AWAITING_APPROVAL", "EXECUTING"
+            }:
+                db.execute(
+                    "UPDATE missions SET status=?, updated_at=? WHERE mission_id=?",
+                    ("VERIFICATION_FAILED", time.time(), mission_id),
+                )
+                self._event(db, mission_id, "MISSION_REVERIFICATION_REQUIRED", {
+                    "prior_status": mission_row["status"],
+                    "invalidated_evidence_ids": invalidated,
+                })
+            elif mission_row["status"] == "ACTION_COMPLETED":
+                self._event(db, mission_id, "POST_ACTION_EVIDENCE_INVALIDATED", {
+                    "invalidated_evidence_ids": invalidated,
+                    "requires_manual_reconciliation": True,
+                })
             return tuple(invalidated)
 
     def record_tool_event(
@@ -596,6 +612,11 @@ class SQLiteMissionStore:
                         "reconcile manually before retrying"
                     )
                 return prior_result
+            mission_row = self._require(db, mission_id)
+            if mission_row["status"] != "AWAITING_APPROVAL":
+                raise ApprovalRequired(
+                    "mission is not in a verified approval state"
+                )
             now = time.time()
             db.execute("INSERT INTO action_runs VALUES(?,?,?,?,?)", (
                 mission_id,
