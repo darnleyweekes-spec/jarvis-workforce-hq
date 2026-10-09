@@ -51,6 +51,11 @@ jobs:
           curl -fsS http://127.0.0.1:18080/healthz
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/readyz)" = "401"
           curl -fsS -H "Authorization: Bearer ci-token-with-more-than-thirty-two-characters" http://127.0.0.1:18080/readyz
+          curl -fsS -X POST http://127.0.0.1:18080/v1/missions \
+            -H "Authorization: Bearer ci-token-with-more-than-thirty-two-characters" \
+            -H "Content-Type: application/json" \
+            -d '{"mission_id":"ci-smoke","objective":"Check metadata","owner_scope":"prime24ai","project_scope":"agents","evidence":[{"evidence_id":"ev-ci","claim":"Operator reported a test incident","source":"ci","retrieved_at":"2026-10-09T10:00:00Z","classification":"user_input"}]}'
+          curl -fsS -H "Authorization: Bearer ci-token-with-more-than-thirty-two-characters" http://127.0.0.1:18080/v1/missions/ci-smoke/evaluation | python3 -c 'import json,sys; assert json.load(sys.stdin)["terminal_success"]'
           docker stop alpha-api-ci
       - name: Check project contracts and new-idea gate
         run: |
