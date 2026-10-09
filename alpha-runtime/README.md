@@ -19,6 +19,9 @@ This is a provider-neutral Python runtime core for supervised ALPHA missions. It
 - Mission scoring for verification, evidence-contract compliance, event-chain integrity, evidence provenance, stalled state, failure state, and mission success.
 - Deterministic behavior-diverse regression subset selection that retains failed/severe cases first.
 - Baseline-vs-candidate reliability comparison and configurable reliability gates.
+- Fail-closed context permission decisions (`ALLOW / DENY / UNRESOLVED`) using owner, project, and access-tag scope before evidence reaches a specialist.
+- Provenance-aware evidence dependencies with transitive invalidation and mission-state cleanup when a source becomes invalid.
+- Trust-layer repeatability evaluation across repeated mission runs: valid grading, traceable work, honest completion, and stable results.
 
 ## Verify
 
@@ -108,6 +111,31 @@ The intended engineering loop is:
 `MISSION -> TRAJECTORY -> EVALUATE -> CLASSIFY FAILURE -> REGRESSION CORPUS -> CHANGE -> REPLAY -> COMPARE -> DEPLOY`
 
 The first regression selector is deliberately dependency-free. It retains failures, blocked false-success attempts, and stalled missions first, then chooses behavior-diverse trajectories using recorded mission/event/check/evidence/state features. Replace or augment it with embedding-backed trajectory selection only when mission volume justifies the added dependency and the embedding method is itself evaluated.
+
+## Context authorization and provenance
+
+Evidence can declare `owner_scope`, `project_scope`, required `access_tags`, `validity_status`, and `depends_on` evidence IDs. A mission can declare its own owner/project scope and access tags.
+
+Before execution, every supplied evidence item receives an auditable permission decision:
+
+- `ALLOW`: scope and access policy match; evidence may enter specialist context.
+- `DENY`: known scope mismatch, missing access tag, or invalid evidence; the mission fails closed.
+- `UNRESOLVED`: scoped evidence was supplied but the mission lacks enough scope information; the mission also fails closed.
+
+Calling `invalidate_evidence()` marks the source invalid, recursively invalidates dependent evidence, records append-only invalidation events, removes unsupported known facts from explicit mission state, and adds an `evidence_invalidated` blocker for re-verification.
+
+## Trust-layer repeatability
+
+Use repeated equivalent missions to test whether a passing result is actually trustworthy:
+
+```python
+report = evals.trust_layer(
+    ["mission-repeat-1", "mission-repeat-2", "mission-repeat-3"],
+    min_runs=2,
+)
+```
+
+The report requires four independent conditions: verification/grading exists and the event chain is valid; work remains traceable through provenance and claim-evidence contracts; no false-success condition is present; and normalized result/verification/mission-state digests are identical across runs.
 
 ### Metrics currently supported
 
