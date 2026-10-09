@@ -713,6 +713,7 @@ class ToolTrajectoryGuard:
         self.failures: dict[str, int] = {}
         self.last_tool: str | None = None
         self.consecutive = 0
+        self.blocked_reason: str | None = None
 
     def invoke(
         self,
@@ -722,8 +723,15 @@ class ToolTrajectoryGuard:
         *,
         consequential: bool = False,
     ) -> Any:
+        if self.blocked_reason is not None:
+            raise TrajectoryBlocked(f"tool trajectory blocked: {self.blocked_reason}")
         if not tool_name or not operation_key:
-            raise ValueError("tool name and stable operation key are required")
+            self.blocked_reason = "invalid_tool_invocation"
+            self.store.record_tool_event(
+                self.mission_id, "TOOL_CALL_BLOCKED",
+                {"reason": self.blocked_reason},
+            )
+            raise TrajectoryBlocked("tool trajectory blocked: invalid_tool_invocation")
         # Store a digest, never raw tool inputs, credentials, outputs, or exceptions.
         operation_digest = hashlib.sha256(operation_key.encode()).hexdigest()
         key = (tool_name, operation_digest)
@@ -746,6 +754,7 @@ class ToolTrajectoryGuard:
             reason = "repeated_tool_failures"
         payload = {"tool": tool_name, "operation_digest": operation_digest}
         if reason:
+            self.blocked_reason = reason
             self.store.record_tool_event(
                 self.mission_id, "TOOL_CALL_BLOCKED", {**payload, "reason": reason}
             )
@@ -1021,6 +1030,10 @@ class AlphaRuntime:
         )
         try:
             result = self.specialists[role].run(scoped)
+            if scoped.tool_guard and scoped.tool_guard.blocked_reason:
+                raise TrajectoryBlocked(
+                    f"tool trajectory blocked: {scoped.tool_guard.blocked_reason}"
+                )
         except Exception as exc:  # Never silently retry side effects.
             self.store.transition(
                 request.mission_id,
