@@ -111,7 +111,7 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.request("POST", "/v1/missions", payload)[0], 400)
         self.assertEqual(self.request("GET", "/v1/missions/nonexistent")[0], 409)
         self.assertEqual(self.request("POST", "/v1/missions", self.valid_payload())[0], 201)
-        self.assertEqual(self.request("POST", "/v1/missions", self.valid_payload())[0], 500)
+        self.assertEqual(self.request("POST", "/v1/missions", self.valid_payload())[0], 409)
         self.assertEqual(self.request("POST", "/v1/missions/nope/invalidate", {})[0], 400)
         self.assertEqual(self.request("GET", "/unknown")[0], 404)
 
