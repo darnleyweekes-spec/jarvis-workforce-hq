@@ -50,6 +50,9 @@ class MissionEvaluation:
     action_completed: bool
     stalled: bool
     trajectory_horizon: int
+    tool_calls_recorded: int
+    tool_errors_recorded: int
+    trajectory_blocked: bool
     failed: bool
     score: float
     failure_labels: tuple[str, ...]
@@ -175,6 +178,7 @@ class AlphaEvaluationHarness:
             and bool(item.get("retrieved_at"))
             and item.get("classification")
             in {"fact", "inference", "hypothesis", "user_input"}
+            and item.get("validity_status", "active") == "active"
             for item in snap.evidence
         )
         context_provenance_passed = evidence_ok
@@ -187,17 +191,33 @@ class AlphaEvaluationHarness:
             for event in snap.events
         )
         stalled = bool((snap.no_progress_count or 0) >= 2)
+        tool_calls_recorded = sum(
+            e["event_type"] == "TOOL_CALL_STARTED" for e in snap.events
+        )
+        tool_errors_recorded = sum(
+            e["event_type"] == "TOOL_CALL_FINISHED"
+            and e["payload"].get("outcome") == "error"
+            for e in snap.events
+        )
+        trajectory_blocked = any(
+            e["event_type"] in {"TOOL_CALL_BLOCKED", "TRAJECTORY_BLOCKED"}
+            for e in snap.events
+        )
         failed = snap.status in FAILURE_STATUSES
         mission_success = (
             snap.status in PASSING_STATUSES
             and verification_passed is not False
             and evidence_contract_passed is not False
+            and context_provenance_passed
+            and not trajectory_blocked
             and not stalled
         )
         terminal_success = (
             snap.status in TERMINAL_SUCCESS_STATUSES
             and verification_passed is not False
             and evidence_contract_passed is not False
+            and context_provenance_passed
+            and not trajectory_blocked
             and not stalled
         )
         false_success = bool(
@@ -235,6 +255,13 @@ class AlphaEvaluationHarness:
             labels.append("false_success")
         if stalled:
             labels.append("mission_state_stalled")
+        if trajectory_blocked:
+            labels.append("trajectory_blocked")
+        if any(
+            e["event_type"] == "POST_ACTION_EVIDENCE_INVALIDATED"
+            for e in snap.events
+        ):
+            labels.append("post_action_evidence_invalidated")
         if snap.status == "FAILED":
             labels.append("specialist_failure")
         if snap.status == "VERIFICATION_FAILED":
@@ -257,6 +284,9 @@ class AlphaEvaluationHarness:
             action_completed=action_completed,
             stalled=stalled,
             trajectory_horizon=len(snap.events),
+            tool_calls_recorded=tool_calls_recorded,
+            tool_errors_recorded=tool_errors_recorded,
+            trajectory_blocked=trajectory_blocked,
             failed=failed,
             score=score,
             failure_labels=tuple(labels),
