@@ -10,6 +10,7 @@ import hmac
 import json
 import os
 import re
+import sqlite3
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -277,7 +278,7 @@ def make_handler(service: Service):
                 self.route()
             except (ValueError, ContextPermissionDenied, VerificationFailed) as exc:
                 self.respond(400, {"error": type(exc).__name__})
-            except MissionError:
+            except (MissionError, sqlite3.IntegrityError):
                 self.respond(409, {"error": "mission_conflict_or_missing"})
             except Exception:
                 self.respond(500, {"error": "internal_error"})
