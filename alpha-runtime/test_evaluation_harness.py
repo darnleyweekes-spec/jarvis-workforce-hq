@@ -179,5 +179,40 @@ class EvaluationHarnessTests(unittest.TestCase):
         )
 
 
+    def test_trust_layer_requires_repeatable_traceable_results(self):
+        runtime = AlphaRuntime(self.store, {"SCRIBE": SuccessSpecialist()})
+        runtime.submit(self.request("repeat-1"), "SCRIBE")
+        runtime.submit(self.request("repeat-2"), "SCRIBE")
+
+        report = self.harness.trust_layer(["repeat-1", "repeat-2"])
+        self.assertTrue(report.valid_grading)
+        self.assertTrue(report.traceable_work)
+        self.assertTrue(report.honest_completion)
+        self.assertTrue(report.repeatable)
+        self.assertTrue(report.passed)
+
+    def test_trust_layer_flags_non_repeatable_results(self):
+        class VariableSpecialist:
+            def __init__(self):
+                self.calls = 0
+
+            def run(self, task):
+                self.calls += 1
+                return SpecialistResult(
+                    f"done-{self.calls}",
+                    completed_criteria=task.success_criteria,
+                )
+
+        specialist = VariableSpecialist()
+        runtime = AlphaRuntime(self.store, {"SCRIBE": specialist})
+        runtime.submit(self.request("vary-1"), "SCRIBE")
+        runtime.submit(self.request("vary-2"), "SCRIBE")
+
+        report = self.harness.trust_layer(["vary-1", "vary-2"])
+        self.assertFalse(report.repeatable)
+        self.assertFalse(report.passed)
+        self.assertIn("non_repeatable_result", report.failure_reasons)
+
+
 if __name__ == "__main__":
     unittest.main()
