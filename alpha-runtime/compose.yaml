@@ -1,0 +1,28 @@
+services:
+  alpha:
+    build:
+      context: ..
+      dockerfile: alpha-runtime/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      ALPHA_BIND: 0.0.0.0
+      ALPHA_PORT: "8080"
+      ALPHA_DB_PATH: /data/alpha.sqlite3
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - alpha_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 512m
+
+volumes:
+  alpha_data:
