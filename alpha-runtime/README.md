@@ -39,6 +39,31 @@ Endpoints: unauthenticated `GET /healthz`; authenticated `GET /readyz`, `POST /v
 
 The API rejects user-supplied tool permissions, proposed actions, and arbitrary role selection. It accepts a single, fixed metadata-audit criterion and never performs external actions. The body limit is 64 KiB; raw payloads and credentials are not logged by the HTTP handler.
 
+### Google Compute Engine deployment (small VM)
+
+The repository includes `alpha-runtime/deploy_gce.sh`, which deploys this **private** operator API on an Ubuntu/Debian VM without Docker Compose. It installs Docker if missing, generates a local random operator token without printing it, creates a persistent Docker volume, runs the image as UID 10001 with a read-only root filesystem, and binds port 8080 to **127.0.0.1 only**. It performs a health check and attempts rollback on a failed update. It does not create a Google Cloud project, VM, network, firewall, or billing account.
+
+**Costs:** An e2-micro VM and eligible standard persistent disk in supported US regions may qualify for Google Cloud's Always Free usage allowance. Other items, notably external IPv4 addresses, network egress, snapshots, and usage above the allowance, can be billed. Check current Google Cloud pricing, set a budget alert, and review the estimate before provisioning. A budget alert is **not** a spending cap. Do not assume this configuration costs exactly $0.
+
+1. In Google Cloud Console, select your project and create a small **e2-micro** Ubuntu/Debian Linux VM in an eligible region (for example `us-west1`), with an eligible **standard persistent disk** within the free-tier allowance. Keep HTTP/HTTPS firewall toggles **off**. SSH access must be configured; do not open TCP/8080. Consider whether external IPv4 billing is acceptable before creating the VM.
+2. SSH into the VM and clone `https://github.com/darnleyweekes-spec/jarvis-workforce-hq.git` (use GitHub's authorized private-repo workflow if the repository is private). From the checkout, run:
+
+```bash
+sudo bash alpha-runtime/deploy_gce.sh
+```
+
+3. Verify on the VM: `curl -fsS http://127.0.0.1:8080/healthz`. Keep `/etc/alpha-operator/runtime.env` private; it contains the operator token. Check `sudo docker logs alpha-operator` if startup fails.
+4. To access the private API from your own computer, use an SSH tunnel rather than exposing port 8080. With Google Cloud CLI and the correct project/zone/VM name:
+
+```bash
+gcloud compute ssh VM_NAME --project PROJECT_ID --zone ZONE -- -L 18080:127.0.0.1:8080
+```
+
+Then open `http://127.0.0.1:18080/healthz` on the local computer. If using IAP tunneling, configure IAP and SSH firewall permissions explicitly; IAP is not a substitute for guest outbound package access.
+5. Back up `/data/alpha.sqlite3` using SQLite's backup API, protect and test restores, and verify a sample mission survives a container restart. Keep only one API container against the SQLite volume.
+
+To update: pull reviewed changes in the checkout and rerun the script. The script does not expose the bearer token, provision external ingress, or enable arbitrary tool execution. For reliable unattended updates, monitoring, and recovery, additional operator controls are still needed.
+
 ### Render deployment (persistent single-host alternative)
 
 The repository root contains `render.yaml`. Render can deploy the existing Docker image with a paid single-instance web service and a 1 GB persistent disk in Oregon. The blueprint disables automatic releases until an operator approves them. It does not deploy the public Prime24AI site or enable side-effectful agent tools.
