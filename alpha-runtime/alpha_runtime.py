@@ -34,6 +34,27 @@ class ContextPermissionDenied(MissionError):
     pass
 
 
+class TrajectoryBlocked(MissionError):
+    """An unsafe or abnormal instrumented tool call was stopped before dispatch."""
+
+
+@dataclass(frozen=True)
+class ToolTrajectoryPolicy:
+    max_total_calls: int = 30
+    max_repeats_per_operation: int = 3
+    max_consecutive_same_tool: int = 6
+    max_failures_per_tool: int = 3
+
+    def __post_init__(self):
+        if min(
+            self.max_total_calls,
+            self.max_repeats_per_operation,
+            self.max_consecutive_same_tool,
+            self.max_failures_per_tool,
+        ) < 1:
+            raise ValueError("trajectory limits must be positive")
+
+
 @dataclass(frozen=True)
 class Evidence:
     evidence_id: str
@@ -100,6 +121,22 @@ class SpecialistTask:
     mission_state: MissionState
     attempt: int = 1
     max_attempts: int = 2
+    tool_guard: ToolTrajectoryGuard | None = field(default=None, repr=False, compare=False)
+
+    def invoke_tool(
+        self,
+        tool_name: str,
+        operation_key: str,
+        executor: Callable[[], Any],
+        *,
+        consequential: bool = False,
+    ) -> Any:
+        """Instrumented read-only tool gateway; all adapters must use this path."""
+        if self.tool_guard is None:
+            raise TrajectoryBlocked("no instrumented tool gateway is configured")
+        return self.tool_guard.invoke(
+            tool_name, operation_key, executor, consequential=consequential
+        )
 
 
 @dataclass(frozen=True)
@@ -424,6 +461,19 @@ class SQLiteMissionStore:
                 self._set_state_in_db(db, mission_id, state)
             return tuple(invalidated)
 
+    def record_tool_event(
+        self, mission_id: str, event_type: str, payload: dict[str, Any]
+    ) -> None:
+        if event_type not in {
+            "TOOL_CALL_STARTED", "TOOL_CALL_FINISHED", "TOOL_CALL_BLOCKED"
+        }:
+            raise ValueError("unsupported tool event")
+        with self._connect() as db:
+            row = self._require(db, mission_id)
+            if row["status"] != "EXECUTING":
+                raise TrajectoryBlocked("tool gateway only operates during execution")
+            self._event(db, mission_id, event_type, payload)
+
     def get_mission_state(self, mission_id: str) -> MissionState:
         with self._connect() as db:
             self._require(db, mission_id)
@@ -638,6 +688,91 @@ class SQLiteMissionStore:
         return row
 
 
+class ToolTrajectoryGuard:
+    """Synchronous pre-dispatch safety gate for instrumented read-only tools.
+
+    This protects only tool calls made through SpecialistTask.invoke_tool.
+    A host must prevent specialists from bypassing this gateway.
+    """
+
+    def __init__(
+        self,
+        store: SQLiteMissionStore,
+        mission_id: str,
+        allowed_tools: Sequence[str],
+        prohibited_actions: Sequence[str],
+        policy: ToolTrajectoryPolicy,
+    ):
+        self.store = store
+        self.mission_id = mission_id
+        self.allowed_tools = set(allowed_tools)
+        self.prohibited_actions = set(prohibited_actions)
+        self.policy = policy
+        self.total_calls = 0
+        self.repeats: dict[tuple[str, str], int] = {}
+        self.failures: dict[str, int] = {}
+        self.last_tool: str | None = None
+        self.consecutive = 0
+
+    def invoke(
+        self,
+        tool_name: str,
+        operation_key: str,
+        executor: Callable[[], Any],
+        *,
+        consequential: bool = False,
+    ) -> Any:
+        if not tool_name or not operation_key:
+            raise ValueError("tool name and stable operation key are required")
+        # Store a digest, never raw tool inputs, credentials, outputs, or exceptions.
+        operation_digest = hashlib.sha256(operation_key.encode()).hexdigest()
+        key = (tool_name, operation_digest)
+        repeats = self.repeats.get(key, 0)
+        consecutive = self.consecutive + 1 if self.last_tool == tool_name else 1
+        reason = None
+        if consequential:
+            reason = "consequential_tool_requires_human_approval"
+        elif tool_name not in self.allowed_tools:
+            reason = "tool_not_allowlisted"
+        elif tool_name in self.prohibited_actions:
+            reason = "tool_explicitly_prohibited"
+        elif self.total_calls >= self.policy.max_total_calls:
+            reason = "tool_call_budget_exceeded"
+        elif repeats >= self.policy.max_repeats_per_operation:
+            reason = "repeated_operation_loop"
+        elif consecutive > self.policy.max_consecutive_same_tool:
+            reason = "consecutive_tool_loop"
+        elif self.failures.get(tool_name, 0) >= self.policy.max_failures_per_tool:
+            reason = "repeated_tool_failures"
+        payload = {"tool": tool_name, "operation_digest": operation_digest}
+        if reason:
+            self.store.record_tool_event(
+                self.mission_id, "TOOL_CALL_BLOCKED", {**payload, "reason": reason}
+            )
+            raise TrajectoryBlocked(f"tool trajectory blocked: {reason}")
+
+        self.total_calls += 1
+        self.repeats[key] = repeats + 1
+        self.last_tool = tool_name
+        self.consecutive = consecutive
+        self.store.record_tool_event(
+            self.mission_id, "TOOL_CALL_STARTED", {**payload, "attempt": repeats + 1}
+        )
+        try:
+            result = executor()
+        except Exception as exc:
+            self.failures[tool_name] = self.failures.get(tool_name, 0) + 1
+            self.store.record_tool_event(
+                self.mission_id, "TOOL_CALL_FINISHED",
+                {**payload, "outcome": "error", "error_type": type(exc).__name__},
+            )
+            raise
+        self.store.record_tool_event(
+            self.mission_id, "TOOL_CALL_FINISHED", {**payload, "outcome": "success"}
+        )
+        return result
+
+
 class ContractVerifier:
     """Independent minimum verifier with criterion-level evidence contracts."""
 
@@ -744,10 +879,12 @@ class AlphaRuntime:
     """Orchestrates an explicit lifecycle using injected, narrow specialists."""
 
     def __init__(self, store: SQLiteMissionStore, specialists: dict[str, Specialist],
-                 verifier: Verifier | None = None):
+                 verifier: Verifier | None = None,
+                 trajectory_policy: ToolTrajectoryPolicy | None = None):
         self.store = store
         self.specialists = specialists
         self.verifier = verifier or ContractVerifier()
+        self.trajectory_policy = trajectory_policy or ToolTrajectoryPolicy()
 
     @staticmethod
     def context_permission(
@@ -874,6 +1011,13 @@ class AlphaRuntime:
             evidence=tuple(allowed_evidence),
             mission_state=prior_state,
             max_attempts=2,
+            tool_guard=ToolTrajectoryGuard(
+                self.store,
+                request.mission_id,
+                request.allowed_tools,
+                request.prohibited_actions,
+                self.trajectory_policy,
+            ),
         )
         try:
             result = self.specialists[role].run(scoped)
@@ -882,9 +1026,12 @@ class AlphaRuntime:
                 request.mission_id,
                 "EXECUTING",
                 "FAILED",
-                "SPECIALIST_FAILED",
+                "TRAJECTORY_BLOCKED" if isinstance(exc, TrajectoryBlocked)
+                else "SPECIALIST_FAILED",
                 {"role": role, "error_type": type(exc).__name__},
             )
+            if isinstance(exc, TrajectoryBlocked):
+                raise
             raise MissionError(
                 "specialist failed; mission recorded without automatic retry"
             ) from exc
