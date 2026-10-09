@@ -22,6 +22,7 @@ This is a provider-neutral Python runtime core for supervised ALPHA missions. It
 - Fail-closed context permission decisions (`ALLOW / DENY / UNRESOLVED`) using owner, project, and access-tag scope before evidence reaches a specialist.
 - Provenance-aware evidence dependencies with transitive invalidation and mission-state cleanup when a source becomes invalid.
 - Trust-layer repeatability evaluation across repeated mission runs: valid grading, traceable work, honest completion, and stable results.
+- Real-time instrumented tool trajectory guard with allowlist/prohibited-action checks, bounded calls, repeated-operation detection, consecutive-tool loop detection, failure-streak cutoff, and hash-chained audit events.
 
 ## Verify
 
@@ -153,13 +154,41 @@ The report requires four independent conditions: verification/grading exists and
 
 ### Metrics intentionally not inferred yet
 
-The current mission ledger does not generically record arbitrary tool-call traces, human overrides, or per-mission token/cost data. Therefore the harness marks these as unsupported rather than fabricating estimates:
+The mission ledger now records instrumented tool-call traces, but not generic tool selection correctness, human overrides, or per-mission token/cost data. Therefore the harness marks these as unsupported rather than fabricating estimates:
 
 - `tool_selection_accuracy`
 - `human_override_rate`
 - `cost_per_verified_mission`
 
 Add those metrics only after the runtime records the underlying facts explicitly.
+
+## Real-time abnormal trajectory monitoring
+
+Specialists must call tools through the `SpecialistTask.invoke_tool` gateway. The gateway checks **before dispatch**, not after a mission has already completed. Example:
+
+```python
+from alpha_runtime import AlphaRuntime, ToolTrajectoryPolicy
+
+runtime = AlphaRuntime(
+    store, {"RESEARCHER": specialist},
+    trajectory_policy=ToolTrajectoryPolicy(
+        max_total_calls=30,
+        max_repeats_per_operation=3,
+        max_consecutive_same_tool=6,
+        max_failures_per_tool=3,
+    ),
+)
+
+# Inside specialist.run(task), for a read-only tool:
+result = task.invoke_tool(
+    "web_search", "query:incident-history:2026-10",
+    lambda: read_only_search(),
+)
+```
+
+The mission request must explicitly allow `web_search`. A stable operation key distinguishes repeated identical requests; only its SHA-256 digest is logged, not raw arguments, credentials, results, or exception messages. `TOOL_CALL_STARTED`, `TOOL_CALL_FINISHED`, and `TOOL_CALL_BLOCKED` events are hash-chained. Abnormal calls raise `TrajectoryBlocked` before dispatch and fail the mission even if a specialist swallows the exception. There are **no automatic retries**. Consequential tool calls are rejected by this gateway; they must be proposed and executed through the existing verified human-approval path.
+
+**Enforcement boundary:** This is a local library and only protects calls made through the instrumented gateway. A production host must sandbox or constrain specialists so they cannot invoke arbitrary external SDKs/tools directly. The gateway does not provide process isolation, hard timeouts, semantic loop detection, or tenant authentication. Thresholds are deterministic operational heuristics, not proof that an agent's reasoning is correct.
 
 ## Host integration contract
 
@@ -180,7 +209,7 @@ Add those metrics only after the runtime records the underlying facts explicitly
 - The host must authenticate approvers, enforce authorization, isolate tenants, protect the database file, redact logs, rate-limit requests, and manage backups/encryption.
 - The core doesn't execute arbitrary tools; the host injects any executor. Approval records are not a substitute for user authentication or authorization.
 - A crash after an external side effect but before result persistence is marked ambiguous and intentionally requires manual reconciliation.
-- Generic tool-call tracing, human-override telemetry, token accounting, provider latency, quality, and cost measurement are not yet recorded by this core.
+- Instrumented tool calls are traced, but uninstrumented calls are not observable. Human-override telemetry, token accounting, provider latency, quality, and cost measurement are not yet recorded by this core.
 
 ## Lifecycle
 
